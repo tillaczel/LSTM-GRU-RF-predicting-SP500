@@ -42,14 +42,3 @@ def visualise_data(Data, Returns):
     plt.show()
     plt.matshow(Returns.T, interpolation=None, aspect='auto', cmap='Greys')
     plt.show()
-    
-def reshape(Returns, look_back):
-    # Ensure all data is float
-    values = Returns.astype('float32')
-    # Reshape the data
-    values = values.reshape(np.size(values, 0), 1, 1)
-    reshaped = np.empty([np.size(values, 0)-look_back+1, 0, np.size(values, 2)])
-    # Timesteps in order of time
-    for i in range(1, look_back+1):
-        reshaped = np.concatenate((reshaped, np.roll(values, look_back-i, axis=0)[look_back-1:, :, :]), axis=1)
-    return reshaped
