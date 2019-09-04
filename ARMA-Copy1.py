@@ -2,6 +2,7 @@ from pandas import read_csv
 from pandas import datetime
 from pandas import DataFrame
 from statsmodels.tsa.arima_model import ARMA
+from statsmodels.tsa.arima_model import _arma_predict_out_of_sample
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -40,12 +41,15 @@ def train_ARMA(number_of_study_periods, study_periods, train_ratio, valid_ratio)
                 
                 # fit model
                 model = ARMA(history, order=(p,q))
-                model_fit = model.fit(disp=0, solver='nm')#, method='css',maxiter=100, start_params=np.ones((p+q))
-                ar_coef, ma_coef, constant = model_fit.params[1:p+1], model_fit.params[p+1:p+q+1], model_fit.params[0]
-                resid = model_fit.resid
+                model_fit = model.fit(disp=0, solver='nm', method='mle')#, method='css',maxiter=100, start_params=np.ones((p+q))
+#                 ar_coef, ma_coef, constant = model_fit.params[1:p+1], model_fit.params[p+1:p+q+1], model_fit.params[0]
+# #                 print(model_fit.params)
+#                 resid = model_fit.resid
                 
                 for t in range(len(valid)):
-                    yhat = predict(ar_coef, history) + predict(ma_coef, resid) + constant
+#                     yhat = predict(ar_coef, history) + predict(ma_coef, resid) + constant
+                    yhat = _arma_predict_out_of_sample(model_fit.params, 1, model_fit.resid, p, q, 1, 0,\
+                                history, exog=None, start=0, method='mle')
                     forecast.append(yhat)
                     history.append(valid[t])
 
@@ -53,7 +57,9 @@ def train_ARMA(number_of_study_periods, study_periods, train_ratio, valid_ratio)
 #                 plt.plot(forecast)
 #                 plt.plot(valid)
 #                 plt.show()
-
+#                 print(model_fit.params)
+#                 print(_arma_predict_out_of_sample(model_fit.params, 1, model_fit.resid, p, q, 1, 0,\
+#                                 train, exog=None, start=0, method='mle'))
 #                 print(model_fit.forecast(),forecast[0]-model_fit.forecast()[0], ar_coef, train[-5:], model_fit.params)
                 
         history = [x for x in np.concatenate((train, valid))]
@@ -77,13 +83,15 @@ def train_ARMA(number_of_study_periods, study_periods, train_ratio, valid_ratio)
         
         # fit model
         model = ARMA(history, order=(p,q))
-        model_fit = model.fit(disp=0, solver='nm', maxiter=1000)#, method='css', start_params=np.ones((p+q))
+        model_fit = model.fit(disp=0, solver='nm', method='mle')#, method='css', start_params=np.ones((p+q))
         ar_coef, ma_coef, constant = model_fit.arparams, model_fit.maparams, model_fit.params[0]
 #         print(model_fit.params, ar_coef, ma_coef, constant)
         resid = model_fit.resid
 #         print(constant)
-        for t in range(len(test)):
-                yhat = predict(ar_coef, history) + predict(ma_coef, resid)# + constant*(1-np.sum(ar_coef))
+        for t in range(len(valid)):
+#                     yhat = predict(ar_coef, history) + predict(ma_coef, resid) + constant
+                yhat = _arma_predict_out_of_sample(model_fit.params, 1, model_fit.resid, p, q, 1, 0,\
+                            history, exog=None, start=0, method='mle')
                 forecast.append(yhat)
                 history.append(test[t])
                 

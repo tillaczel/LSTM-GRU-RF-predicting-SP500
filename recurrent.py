@@ -6,34 +6,11 @@ from tensorflow.keras.layers import Input, Dense, LSTM, GRU, Dropout
 from tensorflow.keras.models import load_model
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras import backend as K
+from bayes_opt import BayesianOptimization
 import random
 import time
 
 from libary import *
-
-
-def select_hyperparameter(hyperparameter):
-    random_number = random.randint(0, np.size(hyperparameter,0)-1)
-    parameter = hyperparameter[random_number]
-    return parameter
-
-def select_hyperparameters():
-    n_epochs = 1000
-    look_back = select_hyperparameter(np.arange(1,41))
-    batch_size = select_hyperparameter(2 ** np.arange(8,11))
-    optimizer = select_hyperparameter(['sgd','rmsprop','adam'])
-    dropout = select_hyperparameter(np.round(np.linspace(0, 0.6, num=10),decimals=3))
-    n_layers = select_hyperparameter(np.arange(1,3))
-    first_layer = select_hyperparameter(np.arange(1,21))
-    layer_decay = select_hyperparameter(np.linspace(0.3, 1, num=10))
-    
-    # Convert hyperparameters
-    layers = []
-    for k in range(0,n_layers):
-        layers = np.append(layers, [first_layer*layer_decay**k+0.5]).astype(int)
-    layers = np.clip(layers,1,None).tolist()
-    
-    return n_epochs, look_back, batch_size, optimizer, dropout, layers
 
 def divide_data(reshaped_x, reshaped_y, train_ratio, valid_ratio, look_back):
     train_size = np.round(np.size(reshaped_y, 0) * train_ratio).astype(int)
@@ -92,80 +69,116 @@ def LSTM_network(input_dim,layers,dropout):
     model_output = Dense(1)(x)
     return Model(inputs=model_input, outputs=model_output)
 
+#cell_type,number_of_study_periods,study_periods,number_of_random_search, train_ratio, valid_ratio, model_results, model_names, 
+
+# class data:
+#     def __init__(self,cell_type,number_of_study_periods,study_periods,number_of_random_search, train_ratio, valid_ratio):
+#         self.cell_type = cell_type
+#         self.study_periods = study_periods
+#         self.train_ratio = train_ratio
+#         self.valid_ratio = valid_ratio
+        
+#         self.model_results = np.ones((number_of_study_periods,3))*np.Inf
+#         self.model_names = [None]*number_of_study_periods
+
 def train_recurrent_model(cell_type,number_of_study_periods,study_periods,number_of_random_search, train_ratio, valid_ratio):
     model_results = np.ones((number_of_study_periods,3))*np.Inf
     model_names = [None]*number_of_study_periods
+    
+    def black_box_function(look_back, batch_size, optimizer, dropout, n_layers, first_layer, layer_decay):
+        # Convert hyperparameters
+        n_epochs = 1000
+        look_back = int(look_back)
+        batch_size = 2**int(batch_size)
+        optimizer = ['sgd','rmsprop','adam'][int(optimizer)]
+        n_layers = int(n_layers)
+        first_layer = int(first_layer)
 
-    for period in range(number_of_study_periods):
-        print(f'Period: {period}')
-        for i in range(0,number_of_random_search):
-            #print(i)
-            # Select random hyperparameters
-            n_epochs, look_back, batch_size, optimizer, dropout, layers = select_hyperparameters()
+        layers = []
+        for k in range(0,n_layers):
+            layers = np.append(layers, [first_layer*layer_decay**k+0.5]).astype(int)
+        layers = np.clip(layers,1,None).tolist()
 
-            # Reshape the data
-            Reshaped = reshape(study_periods[0,period], look_back)
+        # Reshape the data
+        Reshaped = reshape(study_periods[0,period], look_back)
 
-            # Get X and Y
-            reshaped_x = Reshaped[:-1, :, :]
-            reshaped_y = Reshaped[1:, -1, 0]
+        # Get X and Y
+        reshaped_x = Reshaped[:-1, :, :]
+        reshaped_y = Reshaped[1:, -1, 0]
 
-            # Divide in train, valid and test set
-            train_x, train_y, valid_x, valid_y, test_x, test_y =\
-                divide_data(reshaped_x, reshaped_y, train_ratio, valid_ratio, look_back)
+        # Divide in train, valid and test set
+        train_x, train_y, valid_x, valid_y, test_x, test_y =\
+            divide_data(reshaped_x, reshaped_y, train_ratio, valid_ratio, look_back)
 
-            # Name the model
-            NAME = 'look_back-'+str(look_back)+\
-                ', n_epochs-'+str(n_epochs)+\
-                ', batch_size-'+str(batch_size)+\
-                ', optimizer-'+optimizer+\
-                ', layers-'+str(layers)+\
-                ', dropout-'+str(dropout)
-            #print('Model name:', NAME)
-            earlystopping = EarlyStopping(monitor='val_loss', min_delta=0, patience=4,\
-                                          verbose=0, mode='auto', baseline=None, restore_best_weights=False)
+        # Name the model
+        NAME = 'look_back-'+str(look_back)+\
+            ', n_epochs-'+str(n_epochs)+\
+            ', batch_size-'+str(batch_size)+\
+            ', optimizer-'+optimizer+\
+            ', layers-'+str(layers)+\
+            ', dropout-'+str(dropout)
+        #print('Model name:', NAME)
+        earlystopping = EarlyStopping(monitor='val_loss', min_delta=0, patience=10,\
+                                      verbose=0, mode='auto', baseline=None, restore_best_weights=True)
 
 
-            #Design model
-            input_dim = (look_back, np.size(Reshaped,2))
-            if cell_type == 'LSTM':
-                model = LSTM_network(input_dim,layers,dropout)
-            else:
-                model = GRU_network(input_dim,layers,dropout)
-            model.compile(loss='mse', optimizer=optimizer)
+        #Design model
+        input_dim = (look_back, np.size(Reshaped,2))
+        if cell_type == 'LSTM':
+            model = LSTM_network(input_dim,layers,dropout)
+        else:
+            model = GRU_network(input_dim,layers,dropout)
+        model.compile(loss='mse', optimizer=optimizer)
 
-            # Print model summary
-            #model.summary()
+        # Print model summary
+        #model.summary()
 
-            # Train model
-            start = time.time()
-            # Fit network
-            history = model.fit(train_x, train_y, epochs=n_epochs, batch_size=batch_size, validation_data=(valid_x, valid_y),\
-                                verbose=0, shuffle=False, callbacks=[earlystopping])
-            end = time.time()
+        # Train model
+        start = time.time()
+        # Fit network
+        history = model.fit(train_x, train_y, epochs=n_epochs, batch_size=batch_size, validation_data=(valid_x, valid_y),\
+                            verbose=0, shuffle=False, callbacks=[earlystopping])
+        end = time.time()
     #         plt.plot(history.history['loss'],label='loss')
     #         plt.plot(history.history['val_loss'],label='val loss')
     #         plt.legend()
     #         plt.show()
+
+        mse_valid = np.mean(np.square(model.predict(valid_x)-valid_y))
+#         print(NAME, mse)
+
+        if mse_valid < model_results[period,1]:
+            model_names[period] = NAME
+            model_results[period,0] = np.mean(np.square(model.predict(train_x)-train_y))
+            model_results[period,1] = mse_valid
+            model_results[period,2] = np.mean(np.square(model.predict(test_x)-test_y))
+    #                 model.save('models/'+str(period)+'-'+NAME)
+    #                 print(f'Train error {model_results[period,0]}')
+    #                 print(f'Valid error {model_results[period,1]}')
+    #                 print(f'Test error {model_results[period,2]}')
+
+        # Clear model
+        del model
+        K.clear_session()
+
+        return -mse_valid
+    
+    for period in range(number_of_study_periods):
+        print(f'Period: {period}')
+        
+        pbounds = {'look_back' : (1, 40),\
+                    'batch_size' : (8, 10),\
+                    'optimizer' : (0, 2),\
+                    'dropout' : (0, 0.6),\
+                    'n_layers' : (1, 3),\
+                    'first_layer' : (1, 20),\
+                    'layer_decay' : (0.3, 1)}
+
+        optimizer = BayesianOptimization(f=black_box_function, pbounds=pbounds, random_state=None)
+        init_points = int(np.ceil(np.log(number_of_random_search)))*3
+        n_iter = max(int(number_of_random_search-init_points),1)
+
+        optimizer.maximize(init_points=init_points, n_iter=n_iter)
+     
             
-            mse = np.mean(np.square(model.predict(valid_x)-valid_y))
-            print(NAME, mse)
-
-            if mse < model_results[period,1]:
-                model_names[period] = NAME
-                model_results[period,0] = np.mean(np.square(model.predict(train_x)-train_y))
-                model_results[period,1] = np.mean(np.square(model.predict(valid_x)-valid_y))
-                model_results[period,2] = np.mean(np.square(model.predict(test_x)-test_y))
-                model.save('models/'+str(period)+'-'+NAME)
-#                 print(f'Train error {model_results[period,0]}')
-#                 print(f'Valid error {model_results[period,1]}')
-#                 print(f'Test error {model_results[period,2]}')
-
-            del model
-
-#             print("Training time:", round(end - start,0))
-
-            
-            # Clear model
-            K.clear_session()
     return model_names, model_results
