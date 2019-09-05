@@ -84,6 +84,8 @@ def LSTM_network(input_dim,layers,dropout):
 def train_recurrent_model(cell_type,number_of_study_periods,study_periods,number_of_random_search, train_ratio, valid_ratio):
     model_results = np.ones((number_of_study_periods,3))*np.Inf
     model_names = [None]*number_of_study_periods
+    model_predictions = np.zeros((number_of_study_periods,study_periods.shape[2]))
+    model_predictions[:] = np.nan
     
     def black_box_function(look_back, batch_size, optimizer, dropout, n_layers, first_layer, layer_decay):
         # Convert hyperparameters
@@ -109,6 +111,14 @@ def train_recurrent_model(cell_type,number_of_study_periods,study_periods,number
         # Divide in train, valid and test set
         train_x, train_y, valid_x, valid_y, test_x, test_y =\
             divide_data(reshaped_x, reshaped_y, train_ratio, valid_ratio, look_back)
+            
+        mean_x = np.mean(train_x)
+        mean_y = np.mean(train_x)
+        std_x = np.std(train_y)
+        std_y = np.std(train_y)
+        
+        train_norm_x, valid_norm_x, test_norm_x = (train_x-mean_x)/std_x, (valid_x-mean_x)/std_x, (test_x-mean_x)/std_x
+        train_norm_y, valid_norm_y, test_norm_y = (train_y-mean_y)/std_y, (valid_y-mean_y)/std_y, (test_y-mean_y)/std_y
 
         # Name the model
         NAME = 'look_back-'+str(look_back)+\
@@ -136,32 +146,30 @@ def train_recurrent_model(cell_type,number_of_study_periods,study_periods,number
         # Train model
         start = time.time()
         # Fit network
-        history = model.fit(train_x, train_y, epochs=n_epochs, batch_size=batch_size, validation_data=(valid_x, valid_y),\
-                            verbose=0, shuffle=False, callbacks=[earlystopping])
+        history = model.fit(train_norm_x, train_norm_y, epochs=n_epochs, batch_size=batch_size,\
+                    validation_data=(valid_norm_x, valid_norm_y), verbose=0, shuffle=False, callbacks=[earlystopping])
         end = time.time()
     #         plt.plot(history.history['loss'],label='loss')
     #         plt.plot(history.history['val_loss'],label='val loss')
     #         plt.legend()
     #         plt.show()
 
-        mse_valid = np.mean(np.square(model.predict(valid_x)-valid_y))
+        mse = np.mean(np.square((model.predict(valid_norm_x)*std_x+mean_x)-valid_y))
 #         print(NAME, mse)
 
-        if mse_valid < model_results[period,1]:
+        if mse < model_results[period,1]:
             model_names[period] = NAME
-            model_results[period,0] = np.mean(np.square(model.predict(train_x)-train_y))
-            model_results[period,1] = mse_valid
-            model_results[period,2] = np.mean(np.square(model.predict(test_x)-test_y))
+            model_results[period, 0] = np.mean(np.square((model.predict(train_norm_x)*std_x+mean_x)-train_y))
+            model_results[period, 1] = mse
+            model_results[period, 2] = np.mean(np.square((model.predict(test_norm_x)*std_x+mean_x)-test_y))
     #                 model.save('models/'+str(period)+'-'+NAME)
-    #                 print(f'Train error {model_results[period,0]}')
-    #                 print(f'Valid error {model_results[period,1]}')
-    #                 print(f'Test error {model_results[period,2]}')
+            model_predictions[period, -len(test_x):] = (model.predict(test_norm_x)*std_x+mean_x)[:,0]
 
         # Clear model
         del model
         K.clear_session()
 
-        return -mse_valid
+        return -mse
     
     for period in range(number_of_study_periods):
         print(f'Period: {period}')
@@ -181,4 +189,4 @@ def train_recurrent_model(cell_type,number_of_study_periods,study_periods,number
         optimizer.maximize(init_points=init_points, n_iter=n_iter)
      
             
-    return model_names, model_results
+    return model_names, model_results, model_predictions

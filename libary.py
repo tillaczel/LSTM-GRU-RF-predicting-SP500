@@ -31,6 +31,30 @@ def inverse_log_return(prices, returns):
     predicted_prices = np.multiply(np.reshape(prices, np.size(prices)), np.reshape(returns, np.size(returns)))
     return predicted_prices
 
+def creating_study_periods(Data, frequencies, frequencies_number_of_samples, frequency_index):
+    Data = resample_data(Data,frequencies[frequency_index])
+
+    # Create datasets
+    dates = Data['Date']
+    Data.drop('Date', inplace=True, axis=1)
+
+    Data = Data.astype('float64')
+    prices = Data
+
+    # Log return
+    Returns = log_return(Data).to_numpy()
+
+    # Create study peridos
+    number_of_study_periods = np.floor(Returns.shape[0]/frequencies_number_of_samples[frequency_index]).astype(int)-1
+    study_periods = np.zeros((2,number_of_study_periods, frequencies_number_of_samples[frequency_index]*2))
+    for i in range(number_of_study_periods):
+        study_periods[0,i] = Returns[i*frequencies_number_of_samples[frequency_index]:\
+                                        (i+2)*frequencies_number_of_samples[frequency_index]].flatten()
+        study_periods[1,i] = dates.iloc[i*frequencies_number_of_samples[frequency_index]:\
+                                        (i+2)*frequencies_number_of_samples[frequency_index]].to_numpy().flatten()
+    
+    return number_of_study_periods, study_periods, prices
+
 def visualise_data(Data, Returns):
     Data.plot(subplots=True, legend=False)
     plt.show()
