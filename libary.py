@@ -32,6 +32,8 @@ def inverse_log_return(prices, returns):
     return predicted_prices
 
 def creating_study_periods(Data, frequencies, frequencies_number_of_samples, frequency_index):
+    # Import data
+    Data = pd.read_csv('Data_1min.csv', dtype=str)
     Data = resample_data(Data,frequencies[frequency_index])
 
     # Create datasets

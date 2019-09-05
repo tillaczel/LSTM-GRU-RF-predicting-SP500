@@ -8,9 +8,8 @@ from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras import backend as K
 from bayes_opt import BayesianOptimization
 import random
-import time
 
-from libary import *
+# from libary import *
 
 def divide_data(reshaped_x, reshaped_y, train_ratio, valid_ratio, look_back):
     train_size = np.round(np.size(reshaped_y, 0) * train_ratio).astype(int)
@@ -113,12 +112,21 @@ def train_recurrent_model(cell_type,number_of_study_periods,study_periods,number
             divide_data(reshaped_x, reshaped_y, train_ratio, valid_ratio, look_back)
             
         mean_x = np.mean(train_x)
-        mean_y = np.mean(train_x)
-        std_x = np.std(train_y)
+        mean_y = np.mean(train_y)
+        std_x = np.std(train_x)
         std_y = np.std(train_y)
         
         train_norm_x, valid_norm_x, test_norm_x = (train_x-mean_x)/std_x, (valid_x-mean_x)/std_x, (test_x-mean_x)/std_x
         train_norm_y, valid_norm_y, test_norm_y = (train_y-mean_y)/std_y, (valid_y-mean_y)/std_y, (test_y-mean_y)/std_y
+        
+#        train_valid_x = np.concatenate(train_x, valid_x)
+#        train_valid_y = np.concatenate(train_y, valid_y)
+        
+#        mean_x_tv = np.mean(train_x)
+#        mean_y_tv = np.mean(train_x)
+#        std_x_tv = np.std(train_y)
+#        std_y_tv = np.std(train_y)
+        
 
         # Name the model
         NAME = 'look_back-'+str(look_back)+\
@@ -144,25 +152,24 @@ def train_recurrent_model(cell_type,number_of_study_periods,study_periods,number
         #model.summary()
 
         # Train model
-        start = time.time()
         # Fit network
         history = model.fit(train_norm_x, train_norm_y, epochs=n_epochs, batch_size=batch_size,\
                     validation_data=(valid_norm_x, valid_norm_y), verbose=0, shuffle=False, callbacks=[earlystopping])
-        end = time.time()
-    #         plt.plot(history.history['loss'],label='loss')
-    #         plt.plot(history.history['val_loss'],label='val loss')
-    #         plt.legend()
-    #         plt.show()
+#         plt.plot(history.history['loss'],label='loss')
+#         plt.plot(history.history['val_loss'],label='val loss')
+#         plt.legend()
+#         plt.show()
 
         mse = np.mean(np.square((model.predict(valid_norm_x)*std_x+mean_x)-valid_y))
-#         print(NAME, mse)
 
         if mse < model_results[period,1]:
             model_names[period] = NAME
             model_results[period, 0] = np.mean(np.square((model.predict(train_norm_x)*std_x+mean_x)-train_y))
             model_results[period, 1] = mse
+#            model.fit(train_norm_x, train_norm_y, epochs=n_epochs, batch_size=batch_size,\
+#                    validation_data=(valid_norm_x, valid_norm_y), verbose=0, shuffle=False, callbacks=[earlystopping])
+            
             model_results[period, 2] = np.mean(np.square((model.predict(test_norm_x)*std_x+mean_x)-test_y))
-    #                 model.save('models/'+str(period)+'-'+NAME)
             model_predictions[period, -len(test_x):] = (model.predict(test_norm_x)*std_x+mean_x)[:,0]
 
         # Clear model
