@@ -183,7 +183,7 @@ def train_recurrent_model(cell_type,number_of_study_periods,study_periods,number
                     'layer_decay' : (0.3, 1)}
 
         optimizer = BayesianOptimization(f=black_box_function, pbounds=pbounds, random_state=None)
-        init_points = int(np.ceil(np.log(number_of_random_search)))*3
+        init_points = int(np.ceil(np.log(number_of_random_search)))*2
         n_iter = max(int(number_of_random_search-init_points),1)
 
         optimizer.maximize(init_points=init_points, n_iter=n_iter)
