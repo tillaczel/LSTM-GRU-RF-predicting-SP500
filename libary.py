@@ -31,7 +31,7 @@ def inverse_log_return(prices, returns):
     predicted_prices = np.multiply(np.reshape(prices, np.size(prices)), np.reshape(returns, np.size(returns)))
     return predicted_prices
 
-def creating_study_periods(Data, frequencies, frequencies_number_of_samples, frequency_index):
+def creating_study_periods(frequencies, frequencies_number_of_samples, frequency_index):
     # Import data
     Data = pd.read_csv('Data_1min.csv', dtype=str)
     Data = resample_data(Data,frequencies[frequency_index])

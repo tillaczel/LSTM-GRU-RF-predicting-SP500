@@ -119,13 +119,17 @@ def train_recurrent_model(cell_type,number_of_study_periods,study_periods,number
         train_norm_x, valid_norm_x, test_norm_x = (train_x-mean_x)/std_x, (valid_x-mean_x)/std_x, (test_x-mean_x)/std_x
         train_norm_y, valid_norm_y, test_norm_y = (train_y-mean_y)/std_y, (valid_y-mean_y)/std_y, (test_y-mean_y)/std_y
         
-#        train_valid_x = np.concatenate(train_x, valid_x)
-#        train_valid_y = np.concatenate(train_y, valid_y)
+        train_valid_x = np.concatenate((train_x, valid_x))
+        train_valid_y = np.concatenate((train_y, valid_y))
         
-#        mean_x_tv = np.mean(train_x)
-#        mean_y_tv = np.mean(train_x)
-#        std_x_tv = np.std(train_y)
-#        std_y_tv = np.std(train_y)
+        mean_x_tv = np.mean(train_valid_x)
+        mean_y_tv = np.mean(train_valid_y)
+        std_x_tv = np.std(train_valid_x)
+        std_y_tv = np.std(train_valid_y)
+        
+        train_valid_norm_x, test_norm_tv_x = (train_valid_x-mean_x_tv)/std_x_tv, (test_x-mean_x_tv)/std_x_tv
+        train_valid_norm_y, test_norm_tv_y = (train_valid_y-mean_y_tv)/std_y_tv, (test_y-mean_y_tv)/std_y_tv
+        
         
 
         # Name the model
@@ -160,17 +164,26 @@ def train_recurrent_model(cell_type,number_of_study_periods,study_periods,number
 #         plt.legend()
 #         plt.show()
 
-        mse = np.mean(np.square((model.predict(valid_norm_x)*std_x+mean_x)-valid_y))
+        mse = np.mean(np.square((model.predict(valid_norm_x)*std_y+mean_y)-valid_y))
 
         if mse < model_results[period,1]:
             model_names[period] = NAME
-            model_results[period, 0] = np.mean(np.square((model.predict(train_norm_x)*std_x+mean_x)-train_y))
+            model_results[period, 0] = np.mean(np.square((model.predict(train_norm_x)*std_y+mean_y)-train_y))
             model_results[period, 1] = mse
-#            model.fit(train_norm_x, train_norm_y, epochs=n_epochs, batch_size=batch_size,\
-#                    validation_data=(valid_norm_x, valid_norm_y), verbose=0, shuffle=False, callbacks=[earlystopping])
             
-            model_results[period, 2] = np.mean(np.square((model.predict(test_norm_x)*std_x+mean_x)-test_y))
-            model_predictions[period, -len(test_x):] = (model.predict(test_norm_x)*std_x+mean_x)[:,0]
+            #Design model
+            del model
+            input_dim = (look_back, np.size(Reshaped,2))
+            if cell_type == 'LSTM':
+                model = LSTM_network(input_dim,layers,dropout)
+            else:
+                model = GRU_network(input_dim,layers,dropout)
+            model.compile(loss='mse', optimizer=optimizer)
+            model.fit(train_valid_norm_x, train_valid_norm_y, epochs=n_epochs, batch_size=batch_size,\
+                    validation_data=(valid_norm_x, valid_norm_y), verbose=0, shuffle=False, callbacks=[earlystopping])
+            
+            model_results[period, 2] = np.mean(np.square((model.predict(test_norm_tv_x)*std_y_tv+mean_y_tv)-test_y))
+            model_predictions[period, -len(test_x):] = (model.predict(test_norm_tv_x)*std_y_tv+mean_y_tv)[:,0]
 
         # Clear model
         del model
