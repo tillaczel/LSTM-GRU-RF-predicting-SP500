@@ -55,29 +55,12 @@ def creating_study_periods(frequencies, frequencies_number_of_samples, frequency
                                         (i+2)*frequencies_number_of_samples[frequency_index]].to_numpy().flatten()
     
     return number_of_study_periods, study_periods, Data, dates
-
-def save_results(frequencies, frequency_index,\
-              ARMA_parameters, ARMA_mse, ARMA_predictions,\
-              LSTM_names, LSTM_mse, LSTM_predictions,\
-              GRU_names, GRU_mse, GRU_predictions):
-    
-    pd.DataFrame(ARMA_parameters).to_csv('results/ARMA_names_frequency_'+str(frequencies[frequency_index])+'.csv')
-    pd.DataFrame(LSTM_names).to_csv('results/LSTM_names_frequency_'+str(frequencies[frequency_index])+'.csv')
-    pd.DataFrame(GRU_names).to_csv('results/GRU_names_frequency_'+str(frequencies[frequency_index])+'.csv')
-    
-    pd.DataFrame(ARMA_mse).to_csv('results/ARMA_mse_frequency_'+str(frequencies[frequency_index])+'.csv')
-    pd.DataFrame(LSTM_mse).to_csv('results/LSTM_mse_frequency_'+str(frequencies[frequency_index])+'.csv')
-    pd.DataFrame(GRU_mse).to_csv('results/GRU_mse_frequency_'+str(frequencies[frequency_index])+'.csv')
-    
-    pd.DataFrame(ARMA_predictions).to_csv('results/ARMA_predictions_frequency_'+str(frequencies[frequency_index])+'.csv')
-    pd.DataFrame(LSTM_predictions).to_csv('results/LSTM_predictions_frequency_'+str(frequencies[frequency_index])+'.csv')
-    pd.DataFrame(GRU_predictions).to_csv('results/GRU_predictions_frequency_'+str(frequencies[frequency_index])+'.csv')
     
 def visualize_results(mse):
     fig = plt.figure(figsize=(14,8))
     plt.plot(mse)
     plt.title('MSE of models')
-    plt.legend(['ARMA', 'LSTM', 'GRU'])
+    plt.legend(['ARMA', 'LSTM', 'GRU', 'Zero return'])
     plt.show()
 
 def visualize_data(Data, Returns):

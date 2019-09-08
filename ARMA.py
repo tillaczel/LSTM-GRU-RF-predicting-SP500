@@ -4,6 +4,7 @@ from pandas import DataFrame
 from pmdarima.arima import auto_arima
 import matplotlib.pyplot as plt
 import numpy as np
+import time
 
 def predict(coef, history):
     yhat = 0.0
@@ -12,6 +13,7 @@ def predict(coef, history):
     return yhat
 
 def train_ARMA(number_of_study_periods, study_periods, train_ratio, valid_ratio):
+    ARMA_start_time = time.time()
     model_results = np.ones((number_of_study_periods,2))*np.Inf
     model_names = [None]*number_of_study_periods
     
@@ -43,10 +45,20 @@ def train_ARMA(number_of_study_periods, study_periods, train_ratio, valid_ratio)
             model.arima_res_.model.endog = np.append(model.arima_res_.model.endog, [test_norm[t]])
             forecast.append(yhat)
         
-        forecast = np.multiply(forecast,[std])+mean
+        forecast = np.array(forecast)*std+mean
+        print(forecast.shape)
         mse[period,1] = np.mean(np.square(forecast-test))
         predictions[period,-len(forecast):] = forecast
-        parameters = [model.order[0], model.order[2]]
+        parameters[period] = [int(model.order[0]), int(model.order[2])]
         
-        print(f'Period: {period}, p: {parameters[0]}, q: {parameters[1]}, mse: {mse[period]}')
+        print(f'Period: {period}, order: {parameters[period]}, mse: {mse[period]}')
+    
+    pd.DataFrame(ARMA_parameters).to_csv('results/ARMA_names_frequency_'+str(frequencies[frequency_index])+'.csv',\
+                                         index=False, header=False)
+    pd.DataFrame(ARMA_mse).to_csv('results/ARMA_mse_frequency_'+str(frequencies[frequency_index])+'.csv',\
+                                         index=False, header=False)
+    pd.DataFrame(ARMA_predictions).to_csv('results/ARMA_predictions_frequency_'+str(frequencies[frequency_index])+'.csv',\
+                                         index=False, header=False)
+    
+    print(f'ARMA trining time: {np.round((time.time()-ARMA_start_time)/60,2)}')
     return parameters, mse, predictions

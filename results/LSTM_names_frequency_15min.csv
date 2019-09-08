@@ -1,0 +1,8 @@
+"look_back-2, n_epochs-1000, batch_size-32, optimizer-rmsprop, layers-[6], dropout-0.18070527457042945"
+"look_back-21, n_epochs-1000, batch_size-32, optimizer-rmsprop, layers-[38, 14], dropout-0.24485930223457358"
+"look_back-4, n_epochs-1000, batch_size-64, optimizer-sgd, layers-[9], dropout-0.0913874230246543"
+"look_back-25, n_epochs-1000, batch_size-128, optimizer-rmsprop, layers-[1, 1], dropout-0.09329137745394062"
+"look_back-37, n_epochs-1000, batch_size-64, optimizer-sgd, layers-[31], dropout-0.11413265378869636"
+"look_back-31, n_epochs-1000, batch_size-64, optimizer-rmsprop, layers-[4, 2], dropout-0.48429594374059165"
+"look_back-13, n_epochs-1000, batch_size-32, optimizer-rmsprop, layers-[8], dropout-0.021732771100533066"
+"look_back-22, n_epochs-1000, batch_size-64, optimizer-sgd, layers-[23, 9], dropout-0.09091668686111865"
