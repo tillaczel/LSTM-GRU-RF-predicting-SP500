@@ -81,7 +81,8 @@ def LSTM_network(input_dim,layers,dropout):
 #         self.model_results = np.ones((number_of_study_periods,3))*np.Inf
 #         self.model_names = [None]*number_of_study_periods
 
-def train_recurrent_model(cell_type, number_of_study_periods, study_periods, train_ratio, valid_ratio):
+def train_recurrent_model(cell_type, number_of_study_periods, study_periods, train_ratio, valid_ratio,\
+                                                             frequency_index, frequencies, frequencies_number_of_samples):
     recurrent_start_time = time.time()
     init_points = 1
     n_iter = 1

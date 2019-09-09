@@ -5,6 +5,7 @@ from pmdarima.arima import auto_arima
 import matplotlib.pyplot as plt
 import numpy as np
 import time
+import pandas as pd
 
 def predict(coef, history):
     yhat = 0.0
@@ -12,7 +13,8 @@ def predict(coef, history):
         yhat += coef[i-1] * history[-i]
     return yhat
 
-def train_ARMA(number_of_study_periods, study_periods, train_ratio, valid_ratio):
+def train_ARMA(number_of_study_periods, study_periods, train_ratio, valid_ratio,\
+                                                             frequency_index, frequencies, frequencies_number_of_samples):
     ARMA_start_time = time.time()
     model_results = np.ones((number_of_study_periods,2))*np.Inf
     model_names = [None]*number_of_study_periods
@@ -46,18 +48,17 @@ def train_ARMA(number_of_study_periods, study_periods, train_ratio, valid_ratio)
             forecast.append(yhat)
         
         forecast = np.array(forecast)*std+mean
-        print(forecast.shape)
         mse[period,1] = np.mean(np.square(forecast-test))
         predictions[period,-len(forecast):] = forecast
         parameters[period] = [int(model.order[0]), int(model.order[2])]
         
         print(f'Period: {period}, order: {parameters[period]}, mse: {mse[period]}')
     
-    pd.DataFrame(ARMA_parameters).to_csv('results/ARMA_names_frequency_'+str(frequencies[frequency_index])+'.csv',\
+    pd.DataFrame(parameters).to_csv('results/ARMA_names_frequency_'+str(frequencies[frequency_index])+'.csv',\
                                          index=False, header=False)
-    pd.DataFrame(ARMA_mse).to_csv('results/ARMA_mse_frequency_'+str(frequencies[frequency_index])+'.csv',\
+    pd.DataFrame(mse).to_csv('results/ARMA_mse_frequency_'+str(frequencies[frequency_index])+'.csv',\
                                          index=False, header=False)
-    pd.DataFrame(ARMA_predictions).to_csv('results/ARMA_predictions_frequency_'+str(frequencies[frequency_index])+'.csv',\
+    pd.DataFrame(predictions).to_csv('results/ARMA_predictions_frequency_'+str(frequencies[frequency_index])+'.csv',\
                                          index=False, header=False)
     
     print(f'ARMA trining time: {np.round((time.time()-ARMA_start_time)/60,2)}')
