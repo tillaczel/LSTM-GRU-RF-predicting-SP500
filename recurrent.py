@@ -13,8 +13,8 @@ import time
 # from libary import *
 
 def divide_data(reshaped_x, reshaped_y, train_ratio, valid_ratio, look_back):
-    train_size = np.round(np.size(reshaped_y, 0) * train_ratio).astype(int)
-    valid_size = np.round(np.size(reshaped_y, 0) * valid_ratio).astype(int)
+    train_size = np.round((np.size(reshaped_y, 0)+look_back) * train_ratio-look_back).astype(int)
+    valid_size = np.round((np.size(reshaped_y, 0)+look_back) * valid_ratio).astype(int)
     test_size = (np.size(reshaped_y, 0) - train_size - valid_size).astype(int)
     train_x = reshaped_x[:train_size, :, :]
     train_y = reshaped_y[:train_size]
@@ -93,7 +93,7 @@ def train_recurrent_model(cell_type, number_of_study_periods, study_periods, tra
     model_predictions[:] = np.nan
     
     def black_box_function(look_back, batch_size, optimizer, dropout, n_layers, first_layer, layer_decay):
-        start_time = time.time()
+#         start_time = time.time()
         # Convert hyperparameters
         look_back = int(look_back)
         batch_size = 2**int(batch_size)
@@ -159,14 +159,14 @@ def train_recurrent_model(cell_type, number_of_study_periods, study_periods, tra
         # Fit network
         earlystopping = EarlyStopping(monitor='val_loss', min_delta=0, patience=8,\
                                       verbose=0, mode='auto', baseline=None, restore_best_weights=True)
-        print(f'Time: {np.round((time.time()-start_time)/60,2)}')
+#         print(f'Time: {np.round((time.time()-start_time)/60,2)}')
         history = model.fit(train_norm_x, train_norm_y, epochs=n_epochs, batch_size=batch_size,\
                     validation_data=(valid_norm_x, valid_norm_y), verbose=0, shuffle=False, callbacks=[earlystopping])
-        print(f'Time: {np.round((time.time()-start_time)/60,2)}')
-        plt.plot(history.history['loss'],label='loss')
-        plt.plot(history.history['val_loss'],label='val loss')
-        plt.legend()
-        plt.show()
+#         print(f'Time: {np.round((time.time()-start_time)/60,2)}')
+#         plt.plot(history.history['loss'],label='loss')
+#         plt.plot(history.history['val_loss'],label='val loss')
+#         plt.legend()
+#         plt.show()
         
         mse = np.mean(np.square((model.predict(valid_norm_x)*std+mean).flatten()-valid_y))
 
@@ -194,7 +194,7 @@ def train_recurrent_model(cell_type, number_of_study_periods, study_periods, tra
         # Clear model
         del model
         K.clear_session()
-        print(f'Time: {np.round((time.time()-start_time)/60,2)}')
+#         print(f'Time: {np.round((time.time()-start_time)/60,2)}')
         return -mse
     
     for period in range(number_of_study_periods):
@@ -212,7 +212,7 @@ def train_recurrent_model(cell_type, number_of_study_periods, study_periods, tra
         
         start_time = time.time()
         optimizer.maximize(init_points=init_points, n_iter=n_iter)
-        print(f'Time: {np.round((time.time()-start_time)/60,2)}')
+        print(f'Period time: {np.round((time.time()-start_time)/60,2)} minutes')
        
     pd.DataFrame(model_names).to_csv('results/'+str(cell_type)+'_names_frequency_'+str(frequencies[frequency_index])+'.csv',\
                                          index=False, header=False)
@@ -221,5 +221,5 @@ def train_recurrent_model(cell_type, number_of_study_periods, study_periods, tra
     pd.DataFrame(model_predictions).to_csv('results/'+str(cell_type)+'_predictions_frequency_'+str(frequencies[frequency_index])+'.csv',\
                                          index=False, header=False)
         
-    print(f'{cell_type} trining time: {np.round((time.time()-recurrent_start_time)/60,2)}')        
+    print(f'{cell_type} training time: {np.round((time.time()-recurrent_start_time)/60,2)} minutes')        
     return model_names, model_results, model_predictions

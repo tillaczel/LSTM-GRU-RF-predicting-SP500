@@ -26,6 +26,7 @@ def train_ARMA(number_of_study_periods, study_periods, train_ratio, valid_ratio,
     mse = np.zeros((number_of_study_periods,2))
     parameters = np.zeros((number_of_study_periods,2))
     predictions = np.zeros((number_of_study_periods,study_periods.shape[2]))
+    predictions[:] = np.nan
     for period in range(number_of_study_periods):
         X = study_periods[0,period]
         train, test = X[:train_size+valid_size], X[train_size+valid_size:]
@@ -36,7 +37,7 @@ def train_ARMA(number_of_study_periods, study_periods, train_ratio, valid_ratio,
 
         # fit model
         model = auto_arima(train_norm, exogenous=None, start_p=0, start_q=0, max_p=5, max_q=5, max_order=10, seasonal=False,\
-                           stationary=True,  information_criterion='aic', alpha=0.05, test='kpss', stepwise=False, n_jobs=1,\
+                           stationary=True,  information_criterion='aic', alpha=0.05, test='kpss', stepwise=True, n_jobs=1,\
                            solver='nm', maxiter=500, disp=0, suppress_warnings=True, error_action='ignore',\
                            return_valid_fits=False, out_of_sample_size=0, scoring='mse')
         mse[period,0] = np.mean(np.square(train-(model.predict_in_sample()*std+mean)))
@@ -61,5 +62,5 @@ def train_ARMA(number_of_study_periods, study_periods, train_ratio, valid_ratio,
     pd.DataFrame(predictions).to_csv('results/ARMA_predictions_frequency_'+str(frequencies[frequency_index])+'.csv',\
                                          index=False, header=False)
     
-    print(f'ARMA trining time: {np.round((time.time()-ARMA_start_time)/60,2)}')
+    print(f'ARMA training time: {np.round((time.time()-ARMA_start_time)/60,2)} minutes')
     return parameters, mse, predictions
