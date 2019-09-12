@@ -99,8 +99,8 @@ def train_recurrent_model(cell_type, number_of_study_periods, study_periods, tra
 
 
             self.recurrent_start_time = time.time()
-            self.init_points = 1
-            self.n_iter = 1
+            self.init_points = 3
+            self.n_iter = 7
 
             self.model_results = np.ones((number_of_study_periods,4))*np.Inf
             self.model_names = [None]*number_of_study_periods
@@ -240,12 +240,12 @@ def train_recurrent_model(cell_type, number_of_study_periods, study_periods, tra
                 optimizer.maximize(init_points=self.init_points, n_iter=self.n_iter)
                 print(f'Period time: {np.round((time.time()-start_time)/60,2)} minutes')
 
-            pd.DataFrame(model_names).to_csv('results/'+str(cell_type)+'_names_frequency_'\
-                                             +str(frequencies[frequency_index])+'.csv',index=False, header=False)
-            pd.DataFrame(model_results).to_csv('results/'+str(cell_type)+'_mse_frequency_'\
-                                               +str(frequencies[frequency_index])+'.csv',index=False, header=False)
-            pd.DataFrame(model_predictions).to_csv('results/'+str(cell_type)+'_predictions_frequency_'\
-                                                    +str(frequencies[frequency_index])+'.csv',index=False, header=False)
+            pd.DataFrame(self.model_names).to_csv('results/'+str(self.cell_type)+'_names_frequency_'\
+                                             +str(self.frequencies[self.frequency_index])+'.csv',index=False, header=False)
+            pd.DataFrame(self.model_results).to_csv('results/'+str(self.cell_type)+'_mse_frequency_'\
+                                               +str(self.frequencies[self.frequency_index])+'.csv',index=False, header=False)
+            pd.DataFrame(self.model_predictions).to_csv('results/'+str(self.cell_type)+'_predictions_frequency_'\
+                                                    +str(self.frequencies[self.frequency_index])+'.csv',index=False, header=False)
 
             print(f'{self.cell_type} training time: {np.round((time.time()-self.recurrent_start_time)/60,2)} minutes')        
     
