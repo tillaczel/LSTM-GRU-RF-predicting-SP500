@@ -99,8 +99,8 @@ def train_recurrent_model(cell_type, number_of_study_periods, study_periods, tra
 
 
             self.recurrent_start_time = time.time()
-            self.init_points = 3
-            self.n_iter = 7
+            self.init_points = 2
+            self.n_iter = 3
 
             self.model_results = np.ones((number_of_study_periods,4))*np.Inf
             self.model_names = [None]*number_of_study_periods
