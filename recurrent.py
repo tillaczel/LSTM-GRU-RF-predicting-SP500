@@ -173,7 +173,7 @@ def train_recurrent_model(cell_type, number_of_study_periods, study_periods, tra
                 model = LSTM_network(input_dim,layers,dropout)
             else:
                 model = GRU_network(input_dim,layers,dropout)
-            model.compile(loss='mse', optimizer=optimizer)
+            model.compile(loss='mae', optimizer=optimizer)
 
             # Print model summary
             #model.summary()
