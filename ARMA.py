@@ -36,7 +36,7 @@ def train_ARMA(number_of_study_periods, study_periods, train_ratio, valid_ratio,
         train_norm, test_norm = (train-mean)/std, (test-mean)/std
 
         # fit model
-        model = auto_arima(train_norm, exogenous=None, start_p=0, start_q=0, max_p=3, max_q=1, max_order=10, seasonal=False,\
+        model = auto_arima(train_norm, exogenous=None, start_p=0, start_q=0, max_p=5, max_q=0, max_order=10, seasonal=False,\
                            stationary=True,  information_criterion='aic', alpha=0.05, test='kpss', stepwise=True, n_jobs=1,\
                            solver='nm', maxiter=1000, disp=0, suppress_warnings=True, error_action='ignore',\
                            return_valid_fits=False, out_of_sample_size=0, scoring='mae')

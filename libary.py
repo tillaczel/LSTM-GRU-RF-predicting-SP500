@@ -46,13 +46,13 @@ def creating_study_periods(frequencies, frequencies_number_of_samples, frequency
     Returns = log_return(Data).to_numpy()
 
     # Create study peridos
-    number_of_study_periods = np.floor(Returns.shape[0]/frequencies_number_of_samples[frequency_index]).astype(int)-1
+    number_of_study_periods = np.floor(Returns.shape[0]/(frequencies_number_of_samples[frequency_index]/2)).astype(int)-3
     study_periods = np.zeros((2,number_of_study_periods, frequencies_number_of_samples[frequency_index]*2))
     for i in range(number_of_study_periods):
-        study_periods[0,i] = Returns[i*frequencies_number_of_samples[frequency_index]:\
-                                        (i+2)*frequencies_number_of_samples[frequency_index]].flatten()
-        study_periods[1,i] = dates.iloc[i*frequencies_number_of_samples[frequency_index]:\
-                                        (i+2)*frequencies_number_of_samples[frequency_index]].to_numpy().flatten()
+        study_periods[0,i] = Returns[(i*frequencies_number_of_samples[frequency_index]/2).astype(int):\
+                                        ((i+4)*frequencies_number_of_samples[frequency_index]/2).astype(int)].flatten()
+        study_periods[1,i] = dates.iloc[(i*frequencies_number_of_samples[frequency_index]/2).astype(int):\
+                                        ((i+4)*frequencies_number_of_samples[frequency_index]/2).astype(int)].to_numpy().flatten()
     
     return number_of_study_periods, study_periods, Data, dates
     
