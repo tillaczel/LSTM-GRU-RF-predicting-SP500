@@ -74,3 +74,13 @@ def visualize_data(Data, Returns):
     plt.show()
     plt.matshow(Returns.T, interpolation=None, aspect='auto', cmap='Greys')
     plt.show()
+    
+def data_split(study_periods):
+    train_ratio = 0.5
+    valid_ratio = 0.25
+    
+    train_size = np.round(np.size(study_periods[0], 1) * train_ratio).astype(int)
+    valid_size = np.round(np.size(study_periods[0], 1) * valid_ratio).astype(int)
+    test_size = (np.size(study_periods[0], 1) - train_size - valid_size).astype(int)
+    
+    return train_size, valid_size, test_size

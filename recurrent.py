@@ -11,12 +11,11 @@ from bayes_opt import BayesianOptimization
 import random
 import time
 
-# from libary import *
+from manipulate_data import *
 
-def divide_data(reshaped_x, reshaped_y, train_ratio, valid_ratio, look_back):
-    train_size = np.round((np.size(reshaped_y, 0)+look_back) * train_ratio-look_back).astype(int)
-    valid_size = np.round((np.size(reshaped_y, 0)+look_back) * valid_ratio).astype(int)
-    test_size = (np.size(reshaped_y, 0) - train_size - valid_size).astype(int)
+def divide_data(reshaped_x, reshaped_y, look_back, study_periods):
+    train_size, valid_size, test_size = data_split(study_periods)
+    train_size -= look_back
     train_x = reshaped_x[:train_size, :, :]
     train_y = reshaped_y[:train_size]
     valid_x = reshaped_x[train_size:train_size + valid_size, :, :]
@@ -24,10 +23,7 @@ def divide_data(reshaped_x, reshaped_y, train_ratio, valid_ratio, look_back):
     test_x = reshaped_x[train_size + valid_size:, :, :]
     test_y = reshaped_y[train_size + valid_size:]
     
-#     train_prices = prices[look_back:look_back+train_size]
-#     valid_prices = prices[look_back+train_size:look_back+train_size+valid_size]
-#     test_prices = prices[look_back+train_size+valid_size:look_back+train_size+valid_size+test_size]
-    return train_x, train_y, valid_x, valid_y, test_x, test_y#, train_prices, valid_prices, test_prices
+    return train_x, train_y, valid_x, valid_y, test_x, test_y
 
 def reshape(Returns, look_back):
     # Ensure all data is float
@@ -70,29 +66,13 @@ def LSTM_network(input_dim,layers,dropout):
     model_output = Dense(1)(x)
     return Model(inputs=model_input, outputs=model_output)
 
-#cell_type,number_of_study_periods,study_periods,number_of_random_search, train_ratio, valid_ratio, model_results, model_names, 
-
-# class data:
-#     def __init__(self,cell_type,number_of_study_periods,study_periods,number_of_random_search, train_ratio, valid_ratio):
-#         self.cell_type = cell_type
-#         self.study_periods = study_periods
-#         self.train_ratio = train_ratio
-#         self.valid_ratio = valid_ratio
-        
-#         self.model_results = np.ones((number_of_study_periods,3))*np.Inf
-#         self.model_names = [None]*number_of_study_periods
-
-def train_recurrent_model(cell_type, number_of_study_periods, study_periods, train_ratio, valid_ratio,\
-                                                             frequency_index, frequencies, frequencies_number_of_samples):
+def train_recurrent_model(cell_type, number_of_study_periods, study_periods, frequency_index, frequencies, frequencies_number_of_samples):
     class recurrent_model():
 
-        def __init__(self, cell_type, number_of_study_periods, study_periods, train_ratio, valid_ratio,\
-                                                                 frequency_index, frequencies, frequencies_number_of_samples):
+        def __init__(self, cell_type, number_of_study_periods, study_periods, frequency_index, frequencies, frequencies_number_of_samples):
             self.cell_type = cell_type
             self.number_of_study_periods = number_of_study_periods
             self.study_periods = study_periods
-            self.train_ratio = train_ratio
-            self.valid_ratio = valid_ratio
             self.frequency_index = frequency_index
             self.frequencies = frequencies
             self.frequencies_number_of_samples = frequencies_number_of_samples
@@ -132,7 +112,7 @@ def train_recurrent_model(cell_type, number_of_study_periods, study_periods, tra
 
             # Divide in train, valid and test set
             train_x, train_y, valid_x, valid_y, test_x, test_y =\
-                divide_data(reshaped_x, reshaped_y, self.train_ratio, self.valid_ratio, look_back)
+                divide_data(reshaped_x, reshaped_y, look_back, self.study_periods)
 
             mean = np.mean(np.append(train_x[0], train_y))
             std = np.std(np.append(train_x[0], train_y))
@@ -148,8 +128,6 @@ def train_recurrent_model(cell_type, number_of_study_periods, study_periods, tra
 
             train_valid_norm_x, test_norm_tv_x = (train_valid_x-mean_tv)/std_tv, (test_x-mean_tv)/std_tv
             train_valid_norm_y, test_norm_tv_y = (train_valid_y-mean_tv)/std_tv, (test_y-mean_tv)/std_tv
-
-
 
             # Name the model
             NAME = 'look_back-'+str(look_back)+\
@@ -173,7 +151,7 @@ def train_recurrent_model(cell_type, number_of_study_periods, study_periods, tra
                 model = LSTM_network(input_dim,layers,dropout)
             else:
                 model = GRU_network(input_dim,layers,dropout)
-            model.compile(loss='mae', optimizer=optimizer)
+            model.compile(loss='mse', optimizer=optimizer)
 
             # Print model summary
             #model.summary()
@@ -250,7 +228,7 @@ def train_recurrent_model(cell_type, number_of_study_periods, study_periods, tra
             print(f'{self.cell_type} training time: {np.round((time.time()-self.recurrent_start_time)/60,2)} minutes')        
     
     
-    recurrent_model = recurrent_model(cell_type, number_of_study_periods, study_periods, train_ratio, valid_ratio,\
+    recurrent_model = recurrent_model(cell_type, number_of_study_periods, study_periods,\
                                                              frequency_index, frequencies, frequencies_number_of_samples)
     recurrent_model.train()
     return recurrent_model.model_names, recurrent_model.model_results, recurrent_model.model_predictions

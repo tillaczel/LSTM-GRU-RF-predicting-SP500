@@ -7,21 +7,20 @@ import numpy as np
 import time
 import pandas as pd
 
+from manipulate_data import *
+
 def predict(coef, history):
     yhat = 0.0
     for i in range(1, len(coef)+1):
         yhat += coef[i-1] * history[-i]
     return yhat
 
-def train_ARMA(number_of_study_periods, study_periods, train_ratio, valid_ratio,\
-                                                             frequency_index, frequencies, frequencies_number_of_samples):
+def train_ARMA(number_of_study_periods, study_periods, frequency_index, frequencies, frequencies_number_of_samples):
     ARMA_start_time = time.time()
     model_results = np.ones((number_of_study_periods,2))*np.Inf
     model_names = [None]*number_of_study_periods
     
-    train_size = np.round(study_periods.shape[2] * train_ratio).astype(int)
-    valid_size = np.round(study_periods.shape[2] * valid_ratio).astype(int)
-    test_size = int(study_periods.shape[2]-train_size-valid_size)
+    train_size, valid_size, test_size = data_split(study_periods)
     
     mse = np.zeros((number_of_study_periods,2))
     parameters = np.zeros((number_of_study_periods,2))
@@ -36,10 +35,10 @@ def train_ARMA(number_of_study_periods, study_periods, train_ratio, valid_ratio,
         train_norm, test_norm = (train-mean)/std, (test-mean)/std
 
         # fit model
-        model = auto_arima(train_norm, exogenous=None, start_p=0, start_q=0, max_p=5, max_q=0, max_order=10, seasonal=False,\
-                           stationary=True,  information_criterion='aic', alpha=0.05, test='kpss', stepwise=True, n_jobs=1,\
+        model = auto_arima(train_norm, exogenous=None, start_p=0, start_q=0, max_p=5, max_q=5, max_order=10, seasonal=False,\
+                           stationary=True,  information_criterion='bic', alpha=0.05, test='kpss', stepwise=True, n_jobs=1,\
                            solver='nm', maxiter=1000, disp=0, suppress_warnings=True, error_action='ignore',\
-                           return_valid_fits=False, out_of_sample_size=0, scoring='mae')
+                           return_valid_fits=False, out_of_sample_size=0, scoring='mse')
         mse[period,0] = np.mean(np.square(train-(model.predict_in_sample()*std+mean)))
         
         forecast = list()
