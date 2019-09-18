@@ -60,15 +60,16 @@ def calculate_trading_strategy(predictions, transaction_cost):
         strategy = predictions[frequency_index].copy()
         strategy[transaction_cost<strategy] = 1
         strategy[-transaction_cost>strategy] = -1
-        strategy[:,0][np.where(np.logical_and(strategy[:,0]>transaction_cost,\
-                                                              strategy[:,0]<-transaction_cost))] = 0
-        for i in range(1, strategy.shape[1]-1):
-            strategy[:,i][np.where(np.logical_and(strategy[:,i]>transaction_cost,\
-                                                                  strategy[:,i]<-transaction_cost))] =\
-                            strategy[:,i-1][np.where(np.logical_and(strategy[:,i]>transaction_cost,\
-                                                                                  strategy[:,i]<-transaction_cost))]
+        strategy[:,0][np.where(np.logical_and(strategy[:,0]<transaction_cost,\
+                                                              strategy[:,0]>-transaction_cost))] = 0
+        for i in range(1, strategy.shape[1]):
+            strategy[:,i][np.where(np.logical_and(strategy[:,i]<transaction_cost,\
+                                                                  strategy[:,i]>-transaction_cost))] =\
+                            strategy[:,i-1][np.where(np.logical_and(strategy[:,i]<transaction_cost,\
+                                                                                  strategy[:,i]>-transaction_cost))]
+#             print(strategy[:,i], predictions[frequency_index][:,i])
         strategies.append(strategy)
-    return strategy 
+    return strategies
 
 def append_periods(model_names, frequencies, frequencies_number_of_samples):
     study_periods_predictions = list()
@@ -94,11 +95,17 @@ def append_periods(model_names, frequencies, frequencies_number_of_samples):
         study_periods_returns.append(study_periods[0,:,-test_size:].flatten())
     return  study_periods_predictions, study_periods_returns
 
+def create_PnL(trading_strategy, returns):
+    PnL = list()
+    for frequency_index in range(5):
+        PnL.append(np.multiply(trading_strategy[frequency_index], returns[frequency_index]))
+    return PnL
+
 def vis_cum_PnL(PnL, returns, frequencies):
     for frequency_index in range(5):
         fig = plt.figure(figsize=(14,8))
-        plt.plot(np.cumsum(PnL, axis=0))
-        plt.plot(np.cumsum(returns),  linewidth=3)
+        plt.plot(np.cumsum(np.transpose(PnL[frequency_index]), axis=0))
+        plt.plot(np.cumsum(returns[frequency_index]),  linewidth=3)
         plt.title(f'Cumulative PnL at frequency {frequencies[frequency_index]}')
         plt.legend(['ARMA', 'LSTM', 'GRU', 'S&P500'])
         plt.show()
