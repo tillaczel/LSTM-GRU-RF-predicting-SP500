@@ -57,7 +57,7 @@ def vis_directional_accuracy(directional_accuracy, frequencies, model_names):
 def calculate_trading_strategy(predictions, transaction_cost):
     strategies = list()
     for frequency_index in range(5):
-        strategy = predictions[frequency_index].copy()
+        strategy = np.exp(predictions[frequency_index].copy())-1
         strategy = np.concatenate((strategy, np.array([np.mean(strategy, axis=0)])), axis=0)
         strategy[transaction_cost<strategy] = 1
         strategy[-transaction_cost>strategy] = -1
@@ -102,7 +102,7 @@ def create_PnL(trading_strategy, returns, transaction_cost):
         cost = -np.abs(np.diff(np.concatenate((np.zeros((trading_strategy[frequency_index].shape[0],1)),\
                                trading_strategy[frequency_index]), axis=1), axis=1))*transaction_cost
         
-        PnL.append(cost+np.multiply(trading_strategy[frequency_index], returns[frequency_index]))
+        PnL.append(np.log(1+cost+np.multiply(trading_strategy[frequency_index], np.exp(returns[frequency_index])-1)))
     return PnL
 
 def vis_cum_PnL(PnL, returns, trading_strategy, frequencies):
