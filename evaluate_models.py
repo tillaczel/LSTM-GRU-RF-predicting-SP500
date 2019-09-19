@@ -58,6 +58,7 @@ def calculate_trading_strategy(predictions, transaction_cost):
     strategies = list()
     for frequency_index in range(5):
         strategy = predictions[frequency_index].copy()
+        strategy = np.concatenate((strategy, np.array([np.mean(strategy, axis=0)])), axis=0)
         strategy[transaction_cost<strategy] = 1
         strategy[-transaction_cost>strategy] = -1
         strategy[:,0][np.where(np.logical_and(strategy[:,0]<transaction_cost,\
@@ -67,7 +68,7 @@ def calculate_trading_strategy(predictions, transaction_cost):
                                                                   strategy[:,i]>-transaction_cost))] =\
                             strategy[:,i-1][np.where(np.logical_and(strategy[:,i]<transaction_cost,\
                                                                                   strategy[:,i]>-transaction_cost))]
-#             print(strategy[:,i], predictions[frequency_index][:,i])
+           
         strategies.append(strategy)
     return strategies
 
@@ -95,17 +96,26 @@ def append_periods(model_names, frequencies, frequencies_number_of_samples):
         study_periods_returns.append(study_periods[0,:,-test_size:].flatten())
     return  study_periods_predictions, study_periods_returns
 
-def create_PnL(trading_strategy, returns):
+def create_PnL(trading_strategy, returns, transaction_cost):
     PnL = list()
     for frequency_index in range(5):
-        PnL.append(np.multiply(trading_strategy[frequency_index], returns[frequency_index]))
+        cost = -np.abs(np.diff(np.concatenate((np.zeros((trading_strategy[frequency_index].shape[0],1)),\
+                               trading_strategy[frequency_index]), axis=1), axis=1))*transaction_cost
+        
+        PnL.append(cost+np.multiply(trading_strategy[frequency_index], returns[frequency_index]))
     return PnL
 
-def vis_cum_PnL(PnL, returns, frequencies):
+def vis_cum_PnL(PnL, returns, trading_strategy, frequencies):
     for frequency_index in range(5):
         fig = plt.figure(figsize=(14,8))
         plt.plot(np.cumsum(np.transpose(PnL[frequency_index]), axis=0))
         plt.plot(np.cumsum(returns[frequency_index]),  linewidth=3)
         plt.title(f'Cumulative PnL at frequency {frequencies[frequency_index]}')
-        plt.legend(['ARMA', 'LSTM', 'GRU', 'S&P500'])
+        plt.legend(['ARMA', 'LSTM', 'GRU', 'Ensemble', 'S&P500'])
+        plt.show()
+        
+        fig = plt.figure(figsize=(14,4))
+        plt.plot(np.transpose(trading_strategy[frequency_index]))
+        plt.title(f'Position at frequency {frequencies[frequency_index]}')
+        plt.legend(['ARMA', 'LSTM', 'GRU', 'Ensemble'])
         plt.show()
