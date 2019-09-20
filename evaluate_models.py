@@ -72,30 +72,6 @@ def calculate_trading_strategy(predictions, transaction_cost):
         strategies.append(strategy)
     return strategies
 
-def append_periods(model_names, frequencies, frequencies_number_of_samples):
-    study_periods_predictions = list()
-    study_periods_returns = list()
-
-    for frequency_index in range(5):
-        print(f'Frequency: {frequencies[frequency_index]}')
-        number_of_study_periods, study_periods, Data, dates = creating_study_periods(frequencies,\
-                                                                                     frequencies_number_of_samples,\
-                                                                                     frequency_index)
-        train_size, valid_size, test_size = data_split(study_periods)
-        
-        predictions = np.zeros((3, number_of_study_periods*test_size))
-        
-        for model_index in range(3):
-    #         print(model_names[model_index])
-            predictions[model_index] = pd.read_csv('results/'+str(model_names[model_index])+\
-                                                    '_predictions_frequency_'+str(frequencies[frequency_index])+\
-                                                    '.csv', header=None).dropna(axis='columns').values.flatten()
-
-
-        study_periods_predictions.append(predictions)
-        study_periods_returns.append(study_periods[0,:,-test_size:].flatten())
-    return  study_periods_predictions, study_periods_returns
-
 def create_PnL(trading_strategy, returns, transaction_cost):
     PnL = list()
     for frequency_index in range(5):
@@ -105,11 +81,17 @@ def create_PnL(trading_strategy, returns, transaction_cost):
         PnL.append(np.log(1+cost+np.multiply(trading_strategy[frequency_index], np.exp(returns[frequency_index])-1)))
     return PnL
 
-def vis_cum_PnL(PnL, returns, trading_strategy, frequencies):
+def vis_cum_PnL(PnL, returns, trading_strategy, frequencies, dates, number_of_study_periods):
     for frequency_index in range(5):
         fig = plt.figure(figsize=(14,8))
         plt.plot(np.cumsum(np.transpose(PnL[frequency_index]), axis=0))
         plt.plot(np.cumsum(returns[frequency_index]),  linewidth=3)
+        dates_f = dates[frequency_index].dt.date.values
+        date_index = (np.arange(number_of_study_periods[frequency_index]+1)/(number_of_study_periods[frequency_index])\
+                      *dates_f.shape[0]-1).astype(int)
+        plt.xticks(date_index,dates_f[date_index], rotation='vertical')
+        for i in range(number_of_study_periods[frequency_index]+1):
+            plt.axvline(x=(i/(number_of_study_periods[frequency_index])*dates_f.shape[0]).astype(int), linestyle='-', c='black')
         plt.title(f'Cumulative PnL at frequency {frequencies[frequency_index]}')
         plt.legend(['ARMA', 'LSTM', 'GRU', 'Ensemble', 'S&P500'])
         plt.show()

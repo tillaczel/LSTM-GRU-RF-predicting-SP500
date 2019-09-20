@@ -34,7 +34,7 @@ def inverse_log_return(prices, returns):
 def creating_study_periods(frequencies, frequencies_number_of_samples, frequency_index):
     # Import data
     Data = pd.read_csv('Data_1min.csv', dtype=str)
-    Data = resample_data(Data,frequencies[frequency_index])
+    Data = resample_data(Data, frequencies[frequency_index])
 
     # Create datasets
     dates = Data['Date']
@@ -54,6 +54,7 @@ def creating_study_periods(frequencies, frequencies_number_of_samples, frequency
         study_periods[1,i] = dates.iloc[(i*frequencies_number_of_samples[frequency_index]/2).astype(int):\
                                         ((i+4)*frequencies_number_of_samples[frequency_index]/2).astype(int)].to_numpy().flatten()
     
+    dates = dates[:((number_of_study_periods+3)*frequencies_number_of_samples[frequency_index]/2).astype(int)]
     return number_of_study_periods, study_periods, Data, dates
     
 def visualize_results(mse):
@@ -84,3 +85,31 @@ def data_split(study_periods):
     test_size = (np.size(study_periods[0], 1) - train_size - valid_size).astype(int)
     
     return train_size, valid_size, test_size
+
+def append_periods(model_names, frequencies, frequencies_number_of_samples):
+    study_periods_predictions = list()
+    study_periods_returns = list()
+    study_periods_dates = list()
+    study_periods_number_of_study_periods = list()
+
+    for frequency_index in range(5):
+        print(f'Frequency: {frequencies[frequency_index]}')
+        number_of_study_periods, study_periods, Data, dates = creating_study_periods(frequencies,\
+                                                                                     frequencies_number_of_samples,\
+                                                                                     frequency_index)
+        train_size, valid_size, test_size = data_split(study_periods)
+        
+        predictions = np.zeros((3, number_of_study_periods*test_size))
+        
+        for model_index in range(3):
+    #         print(model_names[model_index])
+            predictions[model_index] = pd.read_csv('results/'+str(model_names[model_index])+\
+                                                    '_predictions_frequency_'+str(frequencies[frequency_index])+\
+                                                    '.csv', header=None).dropna(axis='columns').values.flatten()
+
+
+        study_periods_predictions.append(predictions)
+        study_periods_returns.append(study_periods[0,:,-test_size:].flatten())
+        study_periods_dates.append(dates[-predictions.shape[1]:])
+        study_periods_number_of_study_periods.append(number_of_study_periods)
+    return  study_periods_predictions, study_periods_returns, study_periods_dates, study_periods_number_of_study_periods
