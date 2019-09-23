@@ -72,32 +72,50 @@ def calculate_trading_strategy(predictions, transaction_cost):
         strategies.append(strategy)
     return strategies
 
-def create_PnL(trading_strategy, returns, transaction_cost):
-    PnL = list()
+def create_cum_logr(trading_strategy, returns, transaction_cost):
+    cum_logr = list()
     for frequency_index in range(5):
         cost = -np.abs(np.diff(np.concatenate((np.zeros((trading_strategy[frequency_index].shape[0],1)),\
                                trading_strategy[frequency_index]), axis=1), axis=1))*transaction_cost
         
-        PnL.append(np.log(1+cost+np.multiply(trading_strategy[frequency_index], np.exp(returns[frequency_index])-1)))
-    return PnL
+        cum_logr.append(np.log(1+cost+np.multiply(trading_strategy[frequency_index], np.exp(returns[frequency_index])-1)))
+    return cum_logr
 
-def vis_cum_PnL(PnL, returns, trading_strategy, frequencies, dates, number_of_study_periods):
+def vis_cum_logr(cum_logr, returns, trading_strategy, frequencies, dates, number_of_study_periods):
     for frequency_index in range(5):
         fig = plt.figure(figsize=(14,8))
-        plt.plot(np.cumsum(np.transpose(PnL[frequency_index]), axis=0))
+        plt.plot(np.cumsum(np.transpose(cum_logr[frequency_index]), axis=0))
         plt.plot(np.cumsum(returns[frequency_index]),  linewidth=3)
         dates_f = dates[frequency_index].dt.date.values
         date_index = (np.arange(number_of_study_periods[frequency_index]+1)/(number_of_study_periods[frequency_index])\
                       *dates_f.shape[0]-1).astype(int)
         plt.xticks(date_index,dates_f[date_index], rotation='vertical')
+        plt.ylabel('Cumulative logreturn')
         for i in range(number_of_study_periods[frequency_index]+1):
             plt.axvline(x=(i/(number_of_study_periods[frequency_index])*dates_f.shape[0]).astype(int), linestyle='-', c='black')
-        plt.title(f'Cumulative PnL at frequency {frequencies[frequency_index]}')
-        plt.legend(['ARMA', 'LSTM', 'GRU', 'Ensemble', 'S&P500'])
+        plt.title(f'Cumulative logreturn at frequency {frequencies[frequency_index]}')
+        plt.legend(['ARMA', 'LSTM', 'GRU', 'Ensemble', 'S&P500'], loc='upper left')
         plt.show()
         
         fig = plt.figure(figsize=(14,4))
         plt.plot(np.transpose(trading_strategy[frequency_index]))
+        plt.xticks(date_index,dates_f[date_index], rotation='vertical')
+        plt.ylabel('Position')
         plt.title(f'Position at frequency {frequencies[frequency_index]}')
-        plt.legend(['ARMA', 'LSTM', 'GRU', 'Ensemble'])
+        plt.legend(['ARMA', 'LSTM', 'GRU', 'Ensemble'], loc='upper left')
         plt.show()
+        
+def create_shapre_ratio(cum_logr, returns):
+    cum_logr = cum_logr.copy()
+    returns = returns.copy()
+    
+    shapre_ratio = np.zeros((5, 5))
+    for frequency_index in range(5):
+        cum_logr[frequency_index] = np.exp(cum_logr[frequency_index])-1
+        returns[frequency_index] = np.exp(returns[frequency_index])-1
+        
+        shapre_ratio[frequency_index, 0:-1] =\
+                            (np.mean(cum_logr[frequency_index], axis=1)-0)/(np.std(cum_logr[frequency_index], axis=1)+1e-8)
+        shapre_ratio[frequency_index, -1] = (np.mean(returns[frequency_index])-0)/(np.std(returns[frequency_index])+1e-8)
+        print(shapre_ratio[frequency_index])
+    return shapre_ratio
