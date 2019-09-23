@@ -82,24 +82,31 @@ def create_cum_logr(trading_strategy, returns, transaction_cost):
     return cum_logr
 
 def vis_cum_logr(cum_logr, returns, trading_strategy, frequencies, dates, number_of_study_periods):
+    fig = plt.figure(figsize=(14,30))
     for frequency_index in range(5):
-        fig = plt.figure(figsize=(14,8))
+        plt.subplot(5, 1, frequency_index+1)
         plt.plot(np.cumsum(np.transpose(cum_logr[frequency_index]), axis=0))
         plt.plot(np.cumsum(returns[frequency_index]),  linewidth=3)
         dates_f = dates[frequency_index].dt.date.values
         date_index = (np.arange(number_of_study_periods[frequency_index]+1)/(number_of_study_periods[frequency_index])\
                       *dates_f.shape[0]-1).astype(int)
-        plt.xticks(date_index,dates_f[date_index], rotation='vertical')
+        plt.xticks(date_index, dates_f[date_index], rotation='vertical')
         plt.ylabel('Cumulative logreturn')
         for i in range(number_of_study_periods[frequency_index]+1):
             plt.axvline(x=(i/(number_of_study_periods[frequency_index])*dates_f.shape[0]).astype(int), linestyle='-', c='black')
         plt.title(f'Cumulative logreturn at frequency {frequencies[frequency_index]}')
         plt.legend(['ARMA', 'LSTM', 'GRU', 'Ensemble', 'S&P500'], loc='upper left')
-        plt.show()
-        
+    plt.suptitle('Cumulative logreturns', y=1.02, fontsize=24)
+    plt.subplots_adjust(top = 1.05, bottom=0.01)
+    plt.show()
+    
+    for frequency_index in range(5):
         fig = plt.figure(figsize=(14,4))
         plt.plot(np.transpose(trading_strategy[frequency_index]))
-        plt.xticks(date_index,dates_f[date_index], rotation='vertical')
+        dates_f = dates[frequency_index].dt.date.values
+        date_index = (np.arange(number_of_study_periods[frequency_index]+1)/(number_of_study_periods[frequency_index])\
+                      *dates_f.shape[0]-1).astype(int)
+        plt.xticks(date_index, dates_f[date_index], rotation='vertical')
         plt.ylabel('Position')
         plt.title(f'Position at frequency {frequencies[frequency_index]}')
         plt.legend(['ARMA', 'LSTM', 'GRU', 'Ensemble'], loc='upper left')
