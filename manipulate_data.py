@@ -91,6 +91,7 @@ def append_periods(model_names, frequencies, frequencies_number_of_samples):
     study_periods_returns = list()
     study_periods_dates = list()
     study_periods_number_of_study_periods = list()
+    study_periods_study_periods = list()
 
     for frequency_index in range(5):
         print(f'Frequency: {frequencies[frequency_index]}')
@@ -112,4 +113,23 @@ def append_periods(model_names, frequencies, frequencies_number_of_samples):
         study_periods_returns.append(study_periods[0,:,-test_size:].flatten())
         study_periods_dates.append(dates[-predictions.shape[1]:])
         study_periods_number_of_study_periods.append(number_of_study_periods)
-    return  study_periods_predictions, study_periods_returns, study_periods_dates, study_periods_number_of_study_periods
+        study_periods_study_periods.append(study_periods)
+    return  study_periods_predictions, study_periods_returns, study_periods_dates,\
+            study_periods_number_of_study_periods, study_periods_study_periods
+
+def np_to_latex_table(data, name):
+    # Add sum
+    table = np.zeros((data.shape[0]+1, data.shape[1]+1))
+    table[:-1, :-1] = data
+    table[-1, :-1] = np.mean(data, axis=0)
+    table[:-1, -1] = np.mean(data, axis=1)
+    table[-1, -1] = np.mean(np.mean(data))
+    
+    if 0.1<table[-1, -1]:
+        fmt = '%1.2f'
+    else:
+        fmt = '%2.2e'
+
+#     print(table)
+    np.savetxt(name, table, delimiter=' & ', fmt=fmt, newline=' \\\\\n')
+    
