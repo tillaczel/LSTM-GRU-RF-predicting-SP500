@@ -69,7 +69,7 @@ def calculate_da_mse(model_names, frequencies, number_of_study_periods, study_pe
     plt.show()
 
     fig = plt.figure(figsize=(14,8))
-    data = np.mean(mse, axis=1)
+    data = np.mean(mse, axis=2)
     plt.bar(np.arange(5)-0.3, data[:,0], 0.2, label='ARMA')
     plt.bar(np.arange(5)-0.1, data[:,1], 0.2, label='LSTM')
     plt.bar(np.arange(5)+0.1, data[:,2], 0.2, label='GRU')
@@ -80,7 +80,7 @@ def calculate_da_mse(model_names, frequencies, number_of_study_periods, study_pe
     plt.show()
 
     fig = plt.figure(figsize=(14,8))
-    data = np.mean(directional_accuracy, axis=1)
+    data = np.mean(directional_accuracy, axis=2)
     plt.bar(np.arange(5)-0.3, data[:,0], 0.2, label='ARMA')
     plt.bar(np.arange(5)-0.1, data[:,1], 0.2, label='LSTM')
     plt.bar(np.arange(5)+0.1, data[:,2], 0.2, label='GRU')
