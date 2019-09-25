@@ -6,6 +6,20 @@ import time
 
 from manipulate_data import *
 
+import matplotlib.style
+import matplotlib as mpl
+mpl.style.use('seaborn-colorblind')
+
+def change_font(SIZE):
+    plt.rc('font', size=SIZE)          
+    plt.rc('axes', titlesize=SIZE)     
+    plt.rc('axes', labelsize=SIZE)    
+    plt.rc('xtick', labelsize=SIZE)    
+    plt.rc('ytick', labelsize=SIZE)    
+    plt.rc('legend', fontsize=SIZE)    
+    plt.rc('figure', titlesize=SIZE)
+    plt.rc('font', family='serif')
+
 def calculate_da_mse(model_names, frequencies, number_of_study_periods, study_periods):
     mse = np.zeros((5, 4, number_of_study_periods[0]))
     directional_accuracy = np.zeros((5, 4, number_of_study_periods[0]))
@@ -42,52 +56,57 @@ def calculate_da_mse(model_names, frequencies, number_of_study_periods, study_pe
     np_to_latex_table(np.transpose(np.mean(directional_accuracy, axis=0)), 'tables/directional_accuracy_freq.csv')
     np_to_latex_table(np.mean(directional_accuracy, axis=2), 'tables/directional_accuracy_study_period.csv')
     
+    change_font(20)
     fig = plt.figure(figsize=(14,8))
+    fig.tight_layout()
     data = np.transpose(np.mean(mse, axis=0))
     plt.bar(np.arange(16)-0.3, data[:,0], 0.2, label='ARMA')
     plt.bar(np.arange(16)-0.1, data[:,1], 0.2, label='LSTM')
     plt.bar(np.arange(16)+0.1, data[:,2], 0.2, label='GRU')
     plt.bar(np.arange(16)+0.3, data[:,3], 0.2, label='Ensemble')
-    plt.xticks(np.arange(16), ['2009 second', '2010 first', '2010 second', '2011 first', '2011 second', '2012 first', \
-                               '2012 second', '2013 first', '2013 second', '2014 first', '2014 second', '2015 first', \
-                               '2015 second', '2016 first', '2016 second', '2017 first'], rotation='vertical')
-    plt.legend()
-    plt.title('MSE over the study periods')
+    plt.xticks(np.arange(16), ['2009 2H', '2010 1H', '2010 2H', '2011 1H', '2011 2H', '2012 1H', \
+                               '2012 2H', '2013 1H', '2013 2H', '2014 1H', '2014 2H', '2015 1H', \
+                               '2015 2H', '2016 1H', '2016 2H', '2017 1H'], rotation=30, ha='right')
+    plt.legend(loc='upper right')
+    plt.savefig('figures/MSE_over_study_periods.png')
     plt.show()
 
     fig = plt.figure(figsize=(14,8))
+    fig.tight_layout()
     data = np.transpose(np.mean(directional_accuracy, axis=0))
     plt.bar(np.arange(16)-0.3, data[:,0], 0.2, label='ARMA')
     plt.bar(np.arange(16)-0.1, data[:,1], 0.2, label='LSTM')
     plt.bar(np.arange(16)+0.1, data[:,2], 0.2, label='GRU')
     plt.bar(np.arange(16)+0.3, data[:,3], 0.2, label='Ensemble')
-    plt.xticks(np.arange(16), ['2009 second', '2010 first', '2010 second', '2011 first', '2011 second', '2012 first', \
-                               '2012 second', '2013 first', '2013 second', '2014 first', '2014 second', '2015 first', \
-                               '2015 second', '2016 first', '2016 second', '2017 first'], rotation='vertical')
-    plt.legend()
-    plt.title('Directional accuracy over the study periods')
+    plt.xticks(np.arange(16), ['2009 2H', '2010 1H', '2010 2H', '2011 1H', '2011 2H', '2012 1H', \
+                               '2012 2H', '2013 1H', '2013 2H', '2014 1H', '2014 2H', '2015 1H', \
+                               '2015 2H', '2016 1H', '2016 2H', '2017 1H'], rotation=30, ha='right')
+    plt.legend(loc='lower right')
+    plt.savefig('figures/Directional_accuracy_over_study_periods.png')
     plt.show()
 
     fig = plt.figure(figsize=(14,8))
+    fig.tight_layout()
     data = np.mean(mse, axis=2)
     plt.bar(np.arange(5)-0.3, data[:,0], 0.2, label='ARMA')
     plt.bar(np.arange(5)-0.1, data[:,1], 0.2, label='LSTM')
     plt.bar(np.arange(5)+0.1, data[:,2], 0.2, label='GRU')
     plt.bar(np.arange(5)+0.3, data[:,3], 0.2, label='Ensemble')
     plt.xticks(np.arange(5), ['Day', '60 min', '15 min', '5 min', '1 min'])
-    plt.legend()
-    plt.title('MSE over frequencies')
+    plt.legend(loc='upper right')
+    plt.savefig('figures/MSE_over_frequencies.png')
     plt.show()
 
     fig = plt.figure(figsize=(14,8))
+    fig.tight_layout()
     data = np.mean(directional_accuracy, axis=2)
     plt.bar(np.arange(5)-0.3, data[:,0], 0.2, label='ARMA')
     plt.bar(np.arange(5)-0.1, data[:,1], 0.2, label='LSTM')
     plt.bar(np.arange(5)+0.1, data[:,2], 0.2, label='GRU')
     plt.bar(np.arange(5)+0.3, data[:,3], 0.2, label='Ensemble')
     plt.xticks(np.arange(5), ['Day', '60 min', '15 min', '5 min', '1 min'])
-    plt.legend()
-    plt.title('Directional accuracy over frequencies')
+    plt.legend(loc='lower right')
+    plt.savefig('figures/Directional_accuracy_over_frequencies.png')
     plt.show()
     
     return mse, directional_accuracy
@@ -110,59 +129,66 @@ def calculate_trading_strategy(predictions, transaction_cost):
         strategies.append(strategy)
     return strategies
 
-def create_cum_logr(trading_strategy, returns, transaction_cost):
-    cum_logr = list()
+def create_logr(trading_strategy, returns, transaction_cost):
+    logr = list()
+    sum_logr = np.zeros((5, trading_strategy[0].shape[0]+1))
     for frequency_index in range(5):
         cost = -np.abs(np.diff(np.concatenate((np.zeros((trading_strategy[frequency_index].shape[0],1)),\
                                trading_strategy[frequency_index]), axis=1), axis=1))*transaction_cost
         
-        cum_logr.append(np.log(1+cost+np.multiply(trading_strategy[frequency_index], np.exp(returns[frequency_index])-1)))
-    return cum_logr
+        logr.append(np.log(1+cost+np.multiply(trading_strategy[frequency_index], np.exp(returns[frequency_index])-1)))
+        sum_logr[frequency_index,:-1] = np.sum(logr[-1], axis=1)
+        sum_logr[frequency_index,-1] = np.sum(returns[frequency_index])
+    np_to_latex_table(sum_logr, 'tables/sum_logr_'+str(transaction_cost).replace('.','')+'.csv')
+    return logr
 
-def vis_cum_logr(cum_logr, returns, trading_strategy, frequencies, dates, number_of_study_periods):
-    fig = plt.figure(figsize=(14,40))
+def vis_cum_logr(logr, returns, trading_strategy, frequencies, dates, number_of_study_periods, transaction_cost):
+    change_font(20)
     for frequency_index in range(5):
-        plt.subplot(5, 1, frequency_index+1)
-        plt.plot(np.cumsum(np.transpose(cum_logr[frequency_index]), axis=0))
+        fig = plt.figure(figsize=(14,6))
+        fig.tight_layout()
+        fig.subplots_adjust(bottom=0.2)
+        plt.plot(np.cumsum(np.transpose(logr[frequency_index]), axis=0))
         plt.plot(np.cumsum(returns[frequency_index]),  linewidth=3)
         dates_f = dates[frequency_index].dt.date.values
         date_index = (np.arange(number_of_study_periods[frequency_index]+1)/(number_of_study_periods[frequency_index])\
                       *dates_f.shape[0]).astype(int)
         date_index[-1] += -1
-        plt.xticks(date_index, dates_f[date_index], rotation='vertical')
+        plt.xticks(date_index, dates_f[date_index], rotation=30, ha='right')
         plt.ylabel('Cumulative logreturn')
         for i in range(number_of_study_periods[frequency_index]+1):
             plt.axvline(x=(i/(number_of_study_periods[frequency_index])*dates_f.shape[0]).astype(int), linestyle='-', c='black')
-        plt.title(f'Cumulative logreturn at frequency {frequencies[frequency_index]}')
+#         plt.title(f'Cumulative logreturn at frequency {frequencies[frequency_index]}')
         plt.legend(['ARMA', 'LSTM', 'GRU', 'Ensemble', 'S&P500'], loc='upper left')
-    plt.suptitle('Cumulative logreturns', y=1.07, fontsize=24)
-    plt.subplots_adjust(top = 1.05, bottom=0.01)
-    plt.show()
+        plt.savefig('figures/Cumulative_logreturns_'+str(transaction_cost).replace('.','')+'_frequency_'+str(frequency_index)+'.png')
+        plt.show()
     
     for frequency_index in range(5):
         fig = plt.figure(figsize=(14,4))
+        fig.tight_layout()
         plt.plot(np.transpose(trading_strategy[frequency_index]))
         dates_f = dates[frequency_index].dt.date.values
         date_index = (np.arange(number_of_study_periods[frequency_index]+1)/(number_of_study_periods[frequency_index])\
                       *dates_f.shape[0]-1).astype(int)
         date_index[-1] += -1
-        plt.xticks(date_index, dates_f[date_index], rotation='vertical')
+        plt.xticks(date_index, dates_f[date_index], rotation=30, ha='right')
         plt.ylabel('Position')
         plt.title(f'Position at frequency {frequencies[frequency_index]}')
         plt.legend(['ARMA', 'LSTM', 'GRU', 'Ensemble'], loc='upper left')
         plt.show()
         
-def create_shapre_ratio(cum_logr, returns):
-    cum_logr = cum_logr.copy()
+def create_shapre_ratio(logr, returns):
+    logr = logr.copy()
     returns = returns.copy()
     
     shapre_ratio = np.zeros((5, 5))
+    modelr = logr.copy()
     for frequency_index in range(5):
-        cum_logr[frequency_index] = np.exp(cum_logr[frequency_index])-1
+        modelr[frequency_index] = np.exp(logr[frequency_index])-1
         returns[frequency_index] = np.exp(returns[frequency_index])-1
         
         shapre_ratio[frequency_index, 0:-1] =\
-                            (np.mean(cum_logr[frequency_index], axis=1)-0)/(np.std(cum_logr[frequency_index], axis=1)+1e-8)
+                            (np.mean(modelr[frequency_index], axis=1)-0)/(np.std(modelr[frequency_index], axis=1)+1e-8)
         shapre_ratio[frequency_index, -1] = (np.mean(returns[frequency_index])-0)/(np.std(returns[frequency_index])+1e-8)
         print(shapre_ratio[frequency_index])
     return shapre_ratio
