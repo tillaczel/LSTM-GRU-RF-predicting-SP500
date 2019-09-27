@@ -100,7 +100,7 @@ def append_periods(model_names, frequencies, frequencies_number_of_samples):
                                                                                      frequency_index)
         train_size, valid_size, test_size = data_split(study_periods)
         
-        predictions = np.zeros((3, number_of_study_periods*test_size))
+        predictions = np.zeros((4, number_of_study_periods*test_size))
         
         for model_index in range(3):
     #         print(model_names[model_index])
@@ -108,7 +108,7 @@ def append_periods(model_names, frequencies, frequencies_number_of_samples):
                                                     '_predictions_frequency_'+str(frequencies[frequency_index])+\
                                                     '.csv', header=None).dropna(axis='columns').values.flatten()
 
-
+        predictions[-1] = np.mean(predictions[:-1], axis=0)
         study_periods_predictions.append(predictions)
         study_periods_returns.append(study_periods[0,:,-test_size:].flatten())
         study_periods_dates.append(dates[-predictions.shape[1]:])
