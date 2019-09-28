@@ -89,8 +89,8 @@ def train_RF(number_of_study_periods, study_periods, frequency_index, frequencie
                 model.fit(train_valid_x, train_valid_y)
 
                 self.model_results[self.period, 2] = np.mean(np.square(model.predict(train_valid_x).flatten()-train_valid_y))
-                self.model_results[self.period, 3] = np.mean(np.square(model.predict(test_tv_x).flatten()-test_y))
-                self.model_predictions[self.period, -len(test_x):] = model.predict(test_tv_x)
+                self.model_results[self.period, 3] = np.mean(np.square(model.predict(test_x).flatten()-test_y))
+                self.model_predictions[self.period, -len(test_x):] = model.predict(test_x)
                 
             return -mse
                 
