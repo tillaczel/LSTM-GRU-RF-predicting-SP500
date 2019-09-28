@@ -196,21 +196,21 @@ def vis_cum_logr(logr, returns, trading_strategy, frequencies, dates, number_of_
 
     plt.show()
         
-def create_sharpe_ratio(logr, returns, transaction_cost, frequencies_number_of_samples, rf=0):
+def create_sharpe_ratio(logr, returns, transaction_cost, frequencies_number_of_samples, model_names, rf=0):
     logr = logr.copy()
     returns = returns.copy()
     
-    sharpe_ratio = np.zeros((5, 5))
+    sharpe_ratio = np.zeros((5, len(model_names)+2))
     modelr = logr.copy()
     
     for frequency_index in range(5):
         modelr[frequency_index] = np.exp(logr[frequency_index])-1
         returns[frequency_index] = np.exp(returns[frequency_index])-1
         
-        sharpe_ratio[frequency_index, 0:-1] =\
+        sharpe_ratio[frequency_index, :-1] =\
                             (np.mean(modelr[frequency_index], axis=1)-rf)/(np.std(modelr[frequency_index], axis=1)+1e-8)
         sharpe_ratio[frequency_index, -1] = (np.mean(returns[frequency_index])-rf)/(np.std(returns[frequency_index])+1e-8)
-        sharpe_ratio = sharpe_ratio*frequencies_number_of_samples**0.5
+        sharpe_ratio = sharpe_ratio*frequencies_number_of_samples[frequency_index]**0.5
     np_to_latex_table(sharpe_ratio, 'tables/sharpe_ratio'+str(transaction_cost).replace('.','')+'.csv')
     return sharpe_ratio
             
@@ -222,3 +222,20 @@ def calculate_MCS(predictions, returns, model_names):
         mcs.compute()
         MCS_values[frequency_index] = mcs.pvalues.sort_index(axis = 0).values.flatten()
     np_to_latex_table(MCS_values, 'tables/MCS.csv')
+    
+def calculate_corr(predictions, returns, model_names):
+    change_font(24)
+    corr_labels = model_names.copy()
+    corr_labels.extend(['ENS', 'S&P 500'])
+    for frequency_index in range(5):
+        corr_matrix = np.corrcoef(np.concatenate((predictions[frequency_index], returns[frequency_index][np.newaxis, :]), axis=0))
+        fig, ax = plt.subplots(figsize=(14, 14))
+        ax.imshow(corr_matrix)
+        plt.xticks(np.arange(len(corr_labels)), corr_labels)
+        plt.yticks(np.arange(len(corr_labels)), corr_labels, rotation=90, va="center")
+        for i in range(len(corr_labels)):
+            for j in range(len(corr_labels)):
+                text = ax.text(j, i, np.round(corr_matrix[i, j],2), ha="center", va="center", color="w")
+        ax.set_ylim(len(corr_labels)-0.5, -0.5)
+        plt.savefig('figures/corr_matrix_frequency_'+str(frequency_index)+'.png')
+        plt.show()

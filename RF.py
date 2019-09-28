@@ -63,49 +63,35 @@ def train_RF(number_of_study_periods, study_periods, frequency_index, frequencie
             train_x, train_y, valid_x, valid_y, test_x, test_y =\
                 divide_data(reshaped_x, reshaped_y, look_back, self.study_periods)
 
-            mean = np.mean(np.append(train_x[0], train_y))
-            std = np.std(np.append(train_x[0], train_y))
-
-            train_norm_x, valid_norm_x, test_norm_x = (train_x-mean)/std, (valid_x-mean)/std, (test_x-mean)/std
-            train_norm_y, valid_norm_y, test_norm_y = (train_y-mean)/std, (valid_y-mean)/std, (test_y-mean)/std
-
             train_valid_x = np.concatenate((train_x, valid_x))
             train_valid_y = np.concatenate((train_y, valid_y))
-
-            mean_tv = np.mean(np.append(train_valid_x[0], train_valid_y))
-            std_tv = np.std(np.append(train_valid_x[0], train_valid_y))
-
-            train_valid_norm_x, test_norm_tv_x = (train_valid_x-mean_tv)/std_tv, (test_x-mean_tv)/std_tv
-            train_valid_norm_y, test_norm_tv_y = (train_valid_y-mean_tv)/std_tv, (test_y-mean_tv)/std_tv
 
             # Name the model
             NAME = 'look_back-'+str(look_back)
 
             #Design model
-            model = RandomForestRegressor(n_estimators = 100, random_state = 0) 
+            model = RandomForestRegressor(n_estimators=256, n_jobs=-2, min_samples_split=0.05, max_features=1/3) 
 
             # Fit network
-            model.fit(train_norm_x, train_norm_y)
+            model.fit(train_x, train_y)
 
-            mse = np.mean(np.square((model.predict(valid_norm_x)*std+mean).flatten()-valid_y))
+            mse = np.mean(np.square(model.predict(valid_x).flatten()-valid_y))
 
             if mse < self.model_results[self.period,1]:
                 self.model_names[self.period] = NAME
-                self.model_results[self.period, 0] = np.mean(np.square((model.predict(train_norm_x)*std+mean).flatten()-train_y))
+                self.model_results[self.period, 0] = np.mean(np.square(model.predict(train_x).flatten()-train_y))
                 self.model_results[self.period, 1] = mse
 
                 #Design model
-                model = RandomForestRegressor(n_estimators = 100, random_state = 0)
+                model = RandomForestRegressor(n_estimators=256, n_jobs=-2, min_samples_split=0.05, max_features=1/3)
                 
                 # Fit network
-                model.fit(train_valid_norm_x, train_valid_norm_y)
+                model.fit(train_valid_x, train_valid_y)
 
-                self.model_results[self.period, 2] = np.mean(np.square((model.predict(train_valid_norm_x)*std_tv+mean_tv)\
-                                                                  .flatten()-train_valid_y))
-                self.model_results[self.period, 3] = np.mean(np.square((model.predict(test_norm_tv_x)*std_tv+mean_tv).flatten()-test_y))
-                self.model_predictions[self.period, -len(test_x):] = (model.predict(test_norm_tv_x)*std_tv+mean_tv)
-
-
+                self.model_results[self.period, 2] = np.mean(np.square(model.predict(train_valid_x).flatten()-train_valid_y))
+                self.model_results[self.period, 3] = np.mean(np.square(model.predict(test_tv_x).flatten()-test_y))
+                self.model_predictions[self.period, -len(test_x):] = model.predict(test_tv_x)
+                
             return -mse
                 
         def train(self):
