@@ -22,8 +22,8 @@ def change_font(SIZE):
     plt.rc('font', family='serif')
 
 def calculate_da_mse(model_names, frequencies, number_of_study_periods, study_periods):
-    mse = np.zeros((5, 4, number_of_study_periods[0]))
-    directional_accuracy = np.zeros((5, 4, number_of_study_periods[0]))
+    mse = np.zeros((5, len(model_names)+1, number_of_study_periods[0]))
+    directional_accuracy = np.zeros((5, len(model_names)+1, number_of_study_periods[0]))
     for frequency_index in range(5):
         train_size, valid_size, test_size = data_split(study_periods[frequency_index])
         
@@ -32,8 +32,8 @@ def calculate_da_mse(model_names, frequencies, number_of_study_periods, study_pe
         study_periods_direction[0==study_periods_direction] = 0
         study_periods_direction[0>study_periods_direction] = -1
         
-        prediction = np.zeros((4, number_of_study_periods[frequency_index], test_size))
-        for model_index in range(3):
+        prediction = np.zeros((len(model_names)+1, number_of_study_periods[frequency_index], test_size))
+        for model_index in range(len(model_names)):
             mse[frequency_index, model_index] = pd.read_csv('results/'+str(model_names[model_index])+'_mse_frequency_'\
                                         +str(frequencies[frequency_index])+'.csv', header=None).values[:,-1]
             prediction[model_index] = pd.read_csv('results/'+str(model_names[model_index])+'_predictions_frequency_'\
@@ -41,7 +41,7 @@ def calculate_da_mse(model_names, frequencies, number_of_study_periods, study_pe
         prediction[-1] = np.mean(prediction[:-1], axis=0)
         mse[frequency_index, -1] = np.mean(np.square(prediction[-1]-study_periods[frequency_index][0][:, -test_size:]), axis=1)
         
-        for model_index in range(4):
+        for model_index in range(len(model_names)+1):
             predictions_direction = prediction[model_index].copy()
             predictions_direction[0<predictions_direction] = 1
             predictions_direction[0==predictions_direction] = 0
@@ -61,10 +61,11 @@ def calculate_da_mse(model_names, frequencies, number_of_study_periods, study_pe
     fig = plt.figure(figsize=(14,8))
     fig.tight_layout()
     data = np.transpose(np.mean(mse, axis=0))
-    plt.bar(np.arange(16)-0.3, data[:,0], 0.2, label='ARMA')
-    plt.bar(np.arange(16)-0.1, data[:,1], 0.2, label='LSTM')
-    plt.bar(np.arange(16)+0.1, data[:,2], 0.2, label='GRU')
-    plt.bar(np.arange(16)+0.3, data[:,3], 0.2, label='Ensemble')
+    plt.bar(np.arange(16)-0.32, data[:,0], 0.16, label='ARMA')
+    plt.bar(np.arange(16)-0.16, data[:,1], 0.16, label='LSTM')
+    plt.bar(np.arange(16), data[:,2], 0.16, label='GRU')
+    plt.bar(np.arange(16)+0.16, data[:,3], 0.16, label='RF')
+    plt.bar(np.arange(16)+0.32, data[:,4], 0.16, label='ENS')
     plt.xticks(np.arange(16), ['2009 2H', '2010 1H', '2010 2H', '2011 1H', '2011 2H', '2012 1H', \
                                '2012 2H', '2013 1H', '2013 2H', '2014 1H', '2014 2H', '2015 1H', \
                                '2015 2H', '2016 1H', '2016 2H', '2017 1H'], rotation=30, ha='right')
@@ -75,10 +76,11 @@ def calculate_da_mse(model_names, frequencies, number_of_study_periods, study_pe
     fig = plt.figure(figsize=(14,8))
     fig.tight_layout()
     data = np.transpose(np.mean(directional_accuracy, axis=0))
-    plt.bar(np.arange(16)-0.3, data[:,0], 0.2, label='ARMA')
-    plt.bar(np.arange(16)-0.1, data[:,1], 0.2, label='LSTM')
-    plt.bar(np.arange(16)+0.1, data[:,2], 0.2, label='GRU')
-    plt.bar(np.arange(16)+0.3, data[:,3], 0.2, label='Ensemble')
+    plt.bar(np.arange(16)-0.32, data[:,0], 0.16, label='ARMA')
+    plt.bar(np.arange(16)-0.16, data[:,1], 0.16, label='LSTM')
+    plt.bar(np.arange(16), data[:,2], 0.16, label='GRU')
+    plt.bar(np.arange(16)+0.16, data[:,3], 0.16, label='RF')
+    plt.bar(np.arange(16)+0.32, data[:,4], 0.16, label='ENS')
     plt.xticks(np.arange(16), ['2009 2H', '2010 1H', '2010 2H', '2011 1H', '2011 2H', '2012 1H', \
                                '2012 2H', '2013 1H', '2013 2H', '2014 1H', '2014 2H', '2015 1H', \
                                '2015 2H', '2016 1H', '2016 2H', '2017 1H'], rotation=30, ha='right')
@@ -89,10 +91,11 @@ def calculate_da_mse(model_names, frequencies, number_of_study_periods, study_pe
     fig = plt.figure(figsize=(14,8))
     fig.tight_layout()
     data = np.mean(mse, axis=2)
-    plt.bar(np.arange(5)-0.3, data[:,0], 0.2, label='ARMA')
-    plt.bar(np.arange(5)-0.1, data[:,1], 0.2, label='LSTM')
-    plt.bar(np.arange(5)+0.1, data[:,2], 0.2, label='GRU')
-    plt.bar(np.arange(5)+0.3, data[:,3], 0.2, label='Ensemble')
+    plt.bar(np.arange(5)-0.32, data[:,0], 0.16, label='ARMA')
+    plt.bar(np.arange(5)-0.16, data[:,1], 0.16, label='LSTM')
+    plt.bar(np.arange(5), data[:,2], 0.16, label='GRU')
+    plt.bar(np.arange(5)+0.16, data[:,3], 0.16, label='RF')
+    plt.bar(np.arange(5)+0.32, data[:,4], 0.16, label='ENS')
     plt.xticks(np.arange(5), ['Day', '60 min', '15 min', '5 min', '1 min'])
     plt.legend(loc='upper right')
     plt.savefig('figures/MSE_over_frequencies.png')
@@ -101,10 +104,11 @@ def calculate_da_mse(model_names, frequencies, number_of_study_periods, study_pe
     fig = plt.figure(figsize=(14,8))
     fig.tight_layout()
     data = np.mean(directional_accuracy, axis=2)
-    plt.bar(np.arange(5)-0.3, data[:,0], 0.2, label='ARMA')
-    plt.bar(np.arange(5)-0.1, data[:,1], 0.2, label='LSTM')
-    plt.bar(np.arange(5)+0.1, data[:,2], 0.2, label='GRU')
-    plt.bar(np.arange(5)+0.3, data[:,3], 0.2, label='Ensemble')
+    plt.bar(np.arange(5)-0.32, data[:,0], 0.16, label='ARMA')
+    plt.bar(np.arange(5)-0.16, data[:,1], 0.16, label='LSTM')
+    plt.bar(np.arange(5), data[:,2], 0.16, label='GRU')
+    plt.bar(np.arange(5)+0.16, data[:,3], 0.16, label='RF')
+    plt.bar(np.arange(5)+0.32, data[:,4], 0.16, label='ENS')
     plt.xticks(np.arange(5), ['Day', '60 min', '15 min', '5 min', '1 min'])
     plt.legend(loc='lower right')
     plt.savefig('figures/Directional_accuracy_over_frequencies.png')
@@ -173,7 +177,7 @@ def vis_cum_logr(logr, returns, trading_strategy, frequencies, dates, number_of_
             plt.xticks(date_index, dates_f[date_index], rotation=90)
         else:
             plt.xticks([],[])
-        axes[frequency_index, 0].legend(['ARMA', 'LSTM', 'GRU', 'Ensemble', 'S&P500'], loc='upper left')
+        axes[frequency_index, 0].legend(['ARMA', 'LSTM', 'GRU', 'ENS', 'S&P500'], loc='upper left')
 
         axes[frequency_index, 1].plot(np.cumsum(np.abs(np.diff(np.transpose(trading_strategy[frequency_index]), axis=0)), axis=0))
         for i in range(number_of_study_periods[frequency_index]+1):
@@ -184,7 +188,7 @@ def vis_cum_logr(logr, returns, trading_strategy, frequencies, dates, number_of_
             plt.xticks(date_index, dates_f[date_index], rotation=90)#, ha='right')
         else:
             plt.xticks([],[])
-        axes[frequency_index, 1].legend(['ARMA', 'LSTM', 'GRU', 'Ensemble'], loc='upper left')
+        axes[frequency_index, 1].legend(['ARMA', 'LSTM', 'GRU', 'ENS'], loc='upper left')
 
     
     fig.tight_layout()
@@ -192,7 +196,7 @@ def vis_cum_logr(logr, returns, trading_strategy, frequencies, dates, number_of_
 
     plt.show()
         
-def create_shapre_ratio(logr, returns, transaction_cost, frequencies_number_of_samples, rf=0):
+def create_sharpe_ratio(logr, returns, transaction_cost, frequencies_number_of_samples, rf=0):
     logr = logr.copy()
     returns = returns.copy()
     
@@ -207,8 +211,8 @@ def create_shapre_ratio(logr, returns, transaction_cost, frequencies_number_of_s
                             (np.mean(modelr[frequency_index], axis=1)-rf)/(np.std(modelr[frequency_index], axis=1)+1e-8)
         sharpe_ratio[frequency_index, -1] = (np.mean(returns[frequency_index])-rf)/(np.std(returns[frequency_index])+1e-8)
         sharpe_ratio = sharpe_ratio*frequencies_number_of_samples**0.5
-    np_to_latex_table(shapre_ratio, 'tables/shapre_ratio'+str(transaction_cost).replace('.','')+'.csv')
-    return shapre_ratio
+    np_to_latex_table(sharpe_ratio, 'tables/sharpe_ratio'+str(transaction_cost).replace('.','')+'.csv')
+    return sharpe_ratio
             
 def calculate_MCS(predictions, returns, model_names):  
     MCS_values = np.zeros((5, len(model_names)+1))

@@ -100,9 +100,9 @@ def append_periods(model_names, frequencies, frequencies_number_of_samples):
                                                                                      frequency_index)
         train_size, valid_size, test_size = data_split(study_periods)
         
-        predictions = np.zeros((4, number_of_study_periods*test_size))
+        predictions = np.zeros((len(model_names)+1, number_of_study_periods*test_size))
         
-        for model_index in range(3):
+        for model_index in range(len(model_names)):
     #         print(model_names[model_index])
             predictions[model_index] = pd.read_csv('results/'+str(model_names[model_index])+\
                                                     '_predictions_frequency_'+str(frequencies[frequency_index])+\
