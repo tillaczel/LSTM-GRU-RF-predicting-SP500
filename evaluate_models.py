@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+from arch.bootstrap.multiple_comparison import MCS  
 
 from manipulate_data import *
 
@@ -51,10 +52,10 @@ def calculate_da_mse(model_names, frequencies, number_of_study_periods, study_pe
                 directions_right = np.sum(directions[directions==1])
                 directional_accuracy[frequency_index, model_index, period] = directions_right/directions.shape[0]
         
-    np_to_latex_table(np.transpose(np.mean(mse, axis=0)), 'tables/mse_freq.csv')
-    np_to_latex_table(np.mean(mse, axis=2), 'tables/mse_study_period.csv')
-    np_to_latex_table(np.transpose(np.mean(directional_accuracy, axis=0)), 'tables/directional_accuracy_freq.csv')
-    np_to_latex_table(np.mean(directional_accuracy, axis=2), 'tables/directional_accuracy_study_period.csv')
+    np_to_latex_table(np.transpose(np.mean(mse, axis=0)), 'tables/mse_freq.csv', calculate_mean=True)
+    np_to_latex_table(np.mean(mse, axis=2), 'tables/mse_study_period.csv', calculate_mean=True)
+    np_to_latex_table(np.transpose(np.mean(directional_accuracy, axis=0)), 'tables/directional_accuracy_freq.csv', calculate_mean=True)
+    np_to_latex_table(np.mean(directional_accuracy, axis=2), 'tables/directional_accuracy_study_period.csv', calculate_mean=True)
     
     change_font(24)
     fig = plt.figure(figsize=(14,8))
@@ -147,7 +148,7 @@ def vis_cum_logr(logr, returns, trading_strategy, frequencies, dates, number_of_
     rows = ['Day', '60 minutes', '15 minutes', '5 minutes', '1 minute']
     
     change_font(12)
-    fig, axes = plt.subplots(nrows=5, ncols=2, figsize=(14, 19))
+    fig, axes = plt.subplots(nrows=5, ncols=2, figsize=(14, 18))
 
     for ax, col in zip(axes[0], cols):
         ax.set_title(col, fontsize=24)
@@ -165,7 +166,8 @@ def vis_cum_logr(logr, returns, trading_strategy, frequencies, dates, number_of_
         axes[frequency_index, 0].plot(np.cumsum(np.transpose(logr[frequency_index]), axis=0))
         axes[frequency_index, 0].plot(np.cumsum(returns[frequency_index]), linewidth=3)
         for i in range(number_of_study_periods[frequency_index]+1):
-            axes[frequency_index, 0].axvline(x=(i/(number_of_study_periods[frequency_index])*dates_f.shape[0]).astype(int), linestyle='--', c='black', linewidth=1)
+            axes[frequency_index, 0].axvline(x=(i/(number_of_study_periods[frequency_index])*dates_f.shape[0]).astype(int),\
+                                             linestyle='--', c='black', linewidth=1)
         plt.sca(axes[frequency_index, 0])
         if frequency_index==4:
             plt.xticks(date_index, dates_f[date_index], rotation=90)
@@ -175,7 +177,8 @@ def vis_cum_logr(logr, returns, trading_strategy, frequencies, dates, number_of_
 
         axes[frequency_index, 1].plot(np.cumsum(np.abs(np.diff(np.transpose(trading_strategy[frequency_index]), axis=0)), axis=0))
         for i in range(number_of_study_periods[frequency_index]+1):
-            axes[frequency_index, 1].axvline(x=(i/(number_of_study_periods[frequency_index])*dates_f.shape[0]).astype(int), linestyle='--', c='black', linewidth=1)
+            axes[frequency_index, 1].axvline(x=(i/(number_of_study_periods[frequency_index])*dates_f.shape[0]).astype(int),\
+                                             linestyle='--', c='black', linewidth=1)
         plt.sca(axes[frequency_index, 1])
         if frequency_index==4:
             plt.xticks(date_index, dates_f[date_index], rotation=90)#, ha='right')
@@ -189,19 +192,29 @@ def vis_cum_logr(logr, returns, trading_strategy, frequencies, dates, number_of_
 
     plt.show()
         
-def create_shapre_ratio(logr, returns):
+def create_shapre_ratio(logr, returns, transaction_cost, frequencies_number_of_samples, rf=0):
     logr = logr.copy()
     returns = returns.copy()
     
-    shapre_ratio = np.zeros((5, 5))
+    sharpe_ratio = np.zeros((5, 5))
     modelr = logr.copy()
+    
     for frequency_index in range(5):
         modelr[frequency_index] = np.exp(logr[frequency_index])-1
         returns[frequency_index] = np.exp(returns[frequency_index])-1
         
-        shapre_ratio[frequency_index, 0:-1] =\
-                            (np.mean(modelr[frequency_index], axis=1)-0)/(np.std(modelr[frequency_index], axis=1)+1e-8)
-        shapre_ratio[frequency_index, -1] = (np.mean(returns[frequency_index])-0)/(np.std(returns[frequency_index])+1e-8)
-        print(shapre_ratio[frequency_index])
+        sharpe_ratio[frequency_index, 0:-1] =\
+                            (np.mean(modelr[frequency_index], axis=1)-rf)/(np.std(modelr[frequency_index], axis=1)+1e-8)
+        sharpe_ratio[frequency_index, -1] = (np.mean(returns[frequency_index])-rf)/(np.std(returns[frequency_index])+1e-8)
+        sharpe_ratio = sharpe_ratio*frequencies_number_of_samples**0.5
+    np_to_latex_table(shapre_ratio, 'tables/shapre_ratio'+str(transaction_cost).replace('.','')+'.csv')
     return shapre_ratio
             
+def calculate_MCS(predictions, returns, model_names):  
+    MCS_values = np.zeros((5, len(model_names)+1))
+    for frequency_index in range(5):
+        losses = np.transpose(np.square(predictions[frequency_index]-returns[frequency_index]))
+        mcs = MCS(losses, size=0.1)
+        mcs.compute()
+        MCS_values[frequency_index] = mcs.pvalues.sort_index(axis = 0).values.flatten()
+    np_to_latex_table(MCS_values, 'tables/MCS.csv')

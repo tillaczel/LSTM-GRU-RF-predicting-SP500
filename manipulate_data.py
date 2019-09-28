@@ -117,15 +117,17 @@ def append_periods(model_names, frequencies, frequencies_number_of_samples):
     return  study_periods_predictions, study_periods_returns, study_periods_dates,\
             study_periods_number_of_study_periods, study_periods_study_periods
 
-def np_to_latex_table(data, name):
-    # Add sum
-    table = np.zeros((data.shape[0]+1, data.shape[1]+1))
-    table[:-1, :-1] = data
-    table[-1, :-1] = np.mean(data, axis=0)
-    table[:-1, -1] = np.mean(data, axis=1)
-    table[-1, -1] = np.mean(np.mean(data))
+def np_to_latex_table(data, name, calculate_mean=False):
+    if calculate_mean:
+        table = np.zeros((data.shape[0]+1, data.shape[1]+1))
+        table[:-1, :-1] = data
+        table[-1, :-1] = np.mean(data, axis=0)
+        table[:-1, -1] = np.mean(data, axis=1)
+        table[-1, -1] = np.mean(np.mean(data))
+    else:
+        table = data
     
-    if 0.1<table[-1, -1]:
+    if 0.1<np.mean(np.mean(table)):
         fmt = '%1.2f'
     else:
         fmt = '%2.2e'
