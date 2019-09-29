@@ -147,7 +147,7 @@ def create_logr(trading_strategy, returns, transaction_cost):
     np_to_latex_table(sum_logr, 'tables/sum_logr_'+str(transaction_cost).replace('.','')+'.csv')
     return logr
 
-def vis_cum_logr(logr, returns, trading_strategy, frequencies, dates, number_of_study_periods, transaction_cost):
+def vis_cum_logr(logr, returns, trading_strategy, frequencies, dates, number_of_study_periods, transaction_cost, model_names):
     cols = ['Cumulative logreturns', 'Cumulative trades']
     rows = ['Day', '60 minutes', '15 minutes', '5 minutes', '1 minute']
     
@@ -177,9 +177,12 @@ def vis_cum_logr(logr, returns, trading_strategy, frequencies, dates, number_of_
             plt.xticks(date_index, dates_f[date_index], rotation=90)
         else:
             plt.xticks([],[])
-        axes[frequency_index, 0].legend(['ARMA', 'LSTM', 'GRU', 'ENS', 'S&P500'], loc='upper left')
+        legen_names = model_names.copy()
+        legen_names.extend(['ENS', 'S&P'])
+        axes[frequency_index, 0].legend(legen_names, loc='upper left')
 
-        axes[frequency_index, 1].plot(np.cumsum(np.abs(np.diff(np.transpose(trading_strategy[frequency_index]), axis=0)), axis=0))
+        axes[frequency_index, 1].plot(np.cumsum(np.abs(np.diff(np.transpose(trading_strategy[frequency_index]), axis=0)), axis=0),\
+                                      linewidth=3)
         for i in range(number_of_study_periods[frequency_index]+1):
             axes[frequency_index, 1].axvline(x=(i/(number_of_study_periods[frequency_index])*dates_f.shape[0]).astype(int),\
                                              linestyle='--', c='black', linewidth=1)
@@ -188,7 +191,9 @@ def vis_cum_logr(logr, returns, trading_strategy, frequencies, dates, number_of_
             plt.xticks(date_index, dates_f[date_index], rotation=90)#, ha='right')
         else:
             plt.xticks([],[])
-        axes[frequency_index, 1].legend(['ARMA', 'LSTM', 'GRU', 'ENS'], loc='upper left')
+        legen_names = model_names.copy()
+        legen_names.extend(['ENS'])
+        axes[frequency_index, 1].legend(legen_names, loc='upper left')
 
     
     fig.tight_layout()
@@ -210,7 +215,7 @@ def create_sharpe_ratio(logr, returns, transaction_cost, frequencies_number_of_s
         sharpe_ratio[frequency_index, :-1] =\
                             (np.mean(modelr[frequency_index], axis=1)-rf)/(np.std(modelr[frequency_index], axis=1)+1e-8)
         sharpe_ratio[frequency_index, -1] = (np.mean(returns[frequency_index])-rf)/(np.std(returns[frequency_index])+1e-8)
-        sharpe_ratio = sharpe_ratio*frequencies_number_of_samples[frequency_index]**0.5
+        sharpe_ratio[frequency_index] = sharpe_ratio[frequency_index]*frequencies_number_of_samples[frequency_index]**0.5
     np_to_latex_table(sharpe_ratio, 'tables/sharpe_ratio'+str(transaction_cost).replace('.','')+'.csv')
     return sharpe_ratio
             
@@ -224,9 +229,9 @@ def calculate_MCS(predictions, returns, model_names):
     np_to_latex_table(MCS_values, 'tables/MCS.csv')
     
 def calculate_corr(predictions, returns, model_names):
-    change_font(24)
+    change_font(36)
     corr_labels = model_names.copy()
-    corr_labels.extend(['ENS', 'S&P 500'])
+    corr_labels.extend(['ENS', 'S&P'])
     for frequency_index in range(5):
         corr_matrix = np.corrcoef(np.concatenate((predictions[frequency_index], returns[frequency_index][np.newaxis, :]), axis=0))
         fig, ax = plt.subplots(figsize=(14, 14))
