@@ -61,7 +61,7 @@ def visualize_results(mse):
     fig = plt.figure(figsize=(14,8))
     plt.plot(mse)
     plt.title('MSE of models')
-    plt.legend(['ARMA', 'LSTM', 'GRU', 'Zero return'])
+    plt.legend(['ARMA', 'LSTM', 'GRU', 'RF', 'Zero return'])
     plt.show()
 
 def visualize_data(Data, Returns):

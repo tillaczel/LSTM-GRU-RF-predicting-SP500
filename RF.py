@@ -70,7 +70,7 @@ def train_RF(number_of_study_periods, study_periods, frequency_index, frequencie
             NAME = 'look_back-'+str(look_back)
 
             #Design model
-            model = RandomForestRegressor(n_estimators=256, n_jobs=-2, min_samples_split=0.05, max_features=1/3) 
+            model = RandomForestRegressor(n_estimators=1024, n_jobs=-2, min_samples_split=0.001, max_features=1/3) 
 
             # Fit network
             model.fit(train_x, train_y)
@@ -83,7 +83,7 @@ def train_RF(number_of_study_periods, study_periods, frequency_index, frequencie
                 self.model_results[self.period, 1] = mse
 
                 #Design model
-                model = RandomForestRegressor(n_estimators=256, n_jobs=-2, min_samples_split=0.05, max_features=1/3)
+                model = RandomForestRegressor(n_estimators=1024, n_jobs=-2, min_samples_split=0.001, max_features=1/3)
                 
                 # Fit network
                 model.fit(train_valid_x, train_valid_y)
