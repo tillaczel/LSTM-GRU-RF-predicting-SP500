@@ -158,7 +158,7 @@ def vis_cum_logr(logr, returns, trading_strategy, frequencies, dates, number_of_
         ax.set_title(col, fontsize=24)
 
     for ax, row in zip(axes[:,0], rows):
-        ax.set_ylabel(row, rotation=90, fontsize=20)
+        ax.set_ylabel(row, rotation=90, fontsize=18)
 
         
     for frequency_index in range(5):
@@ -167,8 +167,8 @@ def vis_cum_logr(logr, returns, trading_strategy, frequencies, dates, number_of_
                       *dates_f.shape[0]).astype(int)
         date_index[-1] += -1
 
-        axes[frequency_index, 0].plot(np.cumsum(np.transpose(logr[frequency_index]), axis=0))
-        axes[frequency_index, 0].plot(np.cumsum(returns[frequency_index]), linewidth=3)
+        l1, l2, l3, l4, l5 = axes[frequency_index, 0].plot(np.cumsum(np.transpose(logr[frequency_index]), axis=0))[:]
+        l6 = axes[frequency_index, 0].plot(np.cumsum(returns[frequency_index]), linewidth=3)[0]
         for i in range(number_of_study_periods[frequency_index]+1):
             axes[frequency_index, 0].axvline(x=(i/(number_of_study_periods[frequency_index])*dates_f.shape[0]).astype(int),\
                                              linestyle='--', c='black', linewidth=1)
@@ -177,9 +177,6 @@ def vis_cum_logr(logr, returns, trading_strategy, frequencies, dates, number_of_
             plt.xticks(date_index, dates_f[date_index], rotation=90)
         else:
             plt.xticks([],[])
-        legen_names = model_names.copy()
-        legen_names.extend(['ENS', 'S&P'])
-        axes[frequency_index, 0].legend(legen_names, loc='upper left')
 
         axes[frequency_index, 1].plot(np.cumsum(np.abs(np.diff(np.transpose(trading_strategy[frequency_index]), axis=0)), axis=0),\
                                       linewidth=3)
@@ -188,15 +185,18 @@ def vis_cum_logr(logr, returns, trading_strategy, frequencies, dates, number_of_
                                              linestyle='--', c='black', linewidth=1)
         plt.sca(axes[frequency_index, 1])
         if frequency_index==4:
-            plt.xticks(date_index, dates_f[date_index], rotation=90)#, ha='right')
+            plt.xticks(date_index, dates_f[date_index], rotation=90)
         else:
             plt.xticks([],[])
-        legen_names = model_names.copy()
-        legen_names.extend(['ENS'])
-        axes[frequency_index, 1].legend(legen_names, loc='upper left')
 
     
     fig.tight_layout()
+    legen_names = model_names.copy()
+    legen_names.extend(['ENS', 'S&P'])
+    leg = fig.legend([l1, l2, l3, l4, l5, l6], legen_names, loc='lower center', borderaxespad=0.1, ncol=6)
+    for line in leg.get_lines():
+        line.set_linewidth(10)
+    plt.subplots_adjust(bottom=0.1)
     plt.savefig('figures/Cumulative_logreturns_'+str(transaction_cost).replace('.','')+'.png')
 
     plt.show()
@@ -244,3 +244,10 @@ def calculate_corr(predictions, returns, model_names):
         ax.set_ylim(len(corr_labels)-0.5, -0.5)
         plt.savefig('figures/corr_matrix_frequency_'+str(frequency_index)+'.png')
         plt.show()
+        
+def calculate_pred_std(predictions):
+    pred_std = np.zeros((5, predictions[0].shape[0]))
+    for frequency_index in range(5):
+        pred_std[frequency_index] = np.std(predictions[frequency_index], axis=1)
+    np_to_latex_table(pred_std, 'tables/pred_std.csv')
+    return pred_std

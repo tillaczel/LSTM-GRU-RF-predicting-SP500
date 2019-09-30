@@ -3,15 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 
-def import_data(file_name, column_of_Y):
-    Data = pd.read_csv(file_name)
-    #print(Data.isna().sum())
-    Data.dropna(inplace=True)
-    dates = Data.iloc[:, 0]
-    Data = Data.drop(['Date'], axis=1)
-    prices = Data.iloc[:, column_of_Y]
-    return dates, Data, prices
-
 def resample_data(df,frequency):
     df['Date'] = pd.to_datetime(df['Date'])
 
