@@ -226,7 +226,7 @@ def calculate_MCS(predictions, returns, model_names):
         mcs = MCS(losses, size=0.1)
         mcs.compute()
         MCS_values[frequency_index] = mcs.pvalues.sort_index(axis = 0).values.flatten()
-    np_to_latex_table(MCS_values, 'tables/MCS.csv')
+    np_to_latex_table(MCS_values, 'tables/MCS.csv', accuracy=4)
     
 def calculate_corr(predictions, returns, model_names):
     change_font(36)
@@ -235,12 +235,12 @@ def calculate_corr(predictions, returns, model_names):
     for frequency_index in range(5):
         corr_matrix = np.corrcoef(np.concatenate((predictions[frequency_index], returns[frequency_index][np.newaxis, :]), axis=0))
         fig, ax = plt.subplots(figsize=(14, 14))
-        ax.imshow(corr_matrix)
+        ax.imshow(corr_matrix, vmin=-1, vmax=1, cmap='RdYlGn')
         plt.xticks(np.arange(len(corr_labels)), corr_labels)
         plt.yticks(np.arange(len(corr_labels)), corr_labels, rotation=90, va="center")
         for i in range(len(corr_labels)):
             for j in range(len(corr_labels)):
-                text = ax.text(j, i, np.round(corr_matrix[i, j],2), ha="center", va="center", color="w")
+                text = ax.text(j, i, np.round(corr_matrix[i, j],2), ha="center", va="center", color="black")
         ax.set_ylim(len(corr_labels)-0.5, -0.5)
         plt.savefig('figures/corr_matrix_frequency_'+str(frequency_index)+'.png')
         plt.show()
