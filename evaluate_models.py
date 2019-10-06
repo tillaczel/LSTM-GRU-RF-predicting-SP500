@@ -218,6 +218,26 @@ def create_sharpe_ratio(logr, returns, transaction_cost, frequencies_number_of_s
         sharpe_ratio[frequency_index] = sharpe_ratio[frequency_index]*frequencies_number_of_samples[frequency_index]**0.5
     np_to_latex_table(sharpe_ratio, 'tables/sharpe_ratio'+str(transaction_cost).replace('.','')+'.csv')
     return sharpe_ratio
+
+def create_sortino_ratio(logr, returns, transaction_cost, frequencies_number_of_samples, model_names, rf=0):
+    logr = logr.copy()
+    returns = returns.copy()
+    
+    sortino_ratio = np.zeros((5, len(model_names)+2))
+    
+    for frequency_index in range(5):
+        m_r = np.exp(logr[frequency_index])-1
+        sp_r = np.exp(returns[frequency_index])-1
+
+        sortino_ratio[frequency_index, :-1] =\
+                    (np.mean(m_r, axis=1)-rf)/\
+                    np.sqrt(np.sum(np.square(np.multiply(m_r-np.mean(m_r), m_r<np.mean(m_r))), axis=1)/m_r.shape[1]+1e-8)
+        sortino_ratio[frequency_index, -1] =\
+                    (np.mean(sp_r)-rf)/\
+                    np.sqrt(np.sum(np.square(np.multiply(sp_r-np.mean(sp_r), sp_r<np.mean(sp_r))))/sp_r.shape[0]+1e-8)
+        sortino_ratio[frequency_index] = sortino_ratio[frequency_index]*frequencies_number_of_samples[frequency_index]**0.5
+    np_to_latex_table(sortino_ratio, 'tables/sortino_ratio'+str(transaction_cost).replace('.','')+'.csv')
+    return sortino_ratio
             
 def calculate_MCS(predictions, returns, model_names):  
     MCS_values = np.zeros((5, len(model_names)+1))
