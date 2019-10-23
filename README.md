@@ -1,6 +1,6 @@
 # LSTM GRU RF predicting SP500
 
-This repository contains the code used for my BSC thesis. The thesis is available under [Till_Aczél_BSc_thesis.pdf](Till_Aczél_BSc_thesis.pdf). 
+This repository contains the code used for my BSC thesis with the name: [Predicting the S&P 500 with long short-term memory network, gated recurrent unit, and random forest](Till_Aczél_BSc_thesis.pdf). 
 
 If you want to cite my thesis, please use the following citation:
 ```
@@ -15,7 +15,7 @@ If you want to cite my thesis, please use the following citation:
 ```
 
 ## Prerequisites
-You need a python 3.6.9 enviroment with the following packages:
+I run the codes in a python 3.6.9 enviroment with the following packages:
 ```
 absl-py               0.8.0
 arch                  4.9.1
@@ -101,3 +101,9 @@ widgetsnbextension    3.5.1
 wincertstore          0.2
 wrapt                 1.11.2
 ```
+
+## Running the codes
+
+In my thesis, I analyzed the ARMA, LSTM, GRU, RF and ENS models on the minute by minute S&P 500 index dataset from 2008 to 2017. Because this dataset is not public, I also run the models on a publicly available Bitcoin dataset. The [Bitcoin dataset](https://www.kaggle.com/mczielinski/bitcoin-historical-data) was downloaded from Kaggle. The S&P 500 and Bitcoin experiments can be found in separate folders.
+
+For training, run the [train.ipynb](train.ipynb) and for evaluating run the [evaluate.ipynb](evaluate.ipynb) notebook.
