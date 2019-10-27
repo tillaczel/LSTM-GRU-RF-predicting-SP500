@@ -1,6 +1,6 @@
 # LSTM GRU RF predicting SP500
 
-This repository contains the code used for my BSC thesis with the name: [Predicting the S&P 500 with long short-term memory network, gated recurrent unit, and random forest](Till_Aczél_BSc_thesis.pdf). 
+This repository contains the code used for my BSC thesis with the name: [Predicting the S&P 500 with long short-term memory network, gated recurrent unit, and random forest](Till_Aczel_BSc_thesis.pdf). 
 
 If you want to cite my thesis, please use the following citation:
 ```
